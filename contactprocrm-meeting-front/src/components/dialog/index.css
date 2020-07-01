@@ -1,0 +1,69 @@
+.settingdialog {
+    display: none;
+}
+.invitedialog {
+    display: none;
+}
+.subdialog {
+    color:white; 
+    font-size:16px; 
+    display: flex;
+    flex-direction: row; 
+    flex-wrap: wrap; 
+    justify-content: space-between;
+    /* padding:20px; */
+    /* max-width: 400px; */
+    background-color: rgba(2, 2, 2, 0.726);
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+}
+.dialogheader {
+    position: absolute;
+    background-color: rgb(49, 49, 49);
+    height: 20px;
+    top: 0px;
+    right:0px;
+    left: 0px;
+    padding: 5px 15px 10px 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.settingdialog span{
+    cursor: pointer;
+}
+.settingcontent {
+    margin-top: 40px;
+    min-width: 650px;
+    min-height: 300px;
+    display: flex;
+    flex-direction: row; 
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 100;
+}
+.combo-select-head{
+    height: 30px !important;
+    line-height: 28px !important;
+    background-color: rgb(0, 59, 126) !important;
+    color: white !important;
+    font-size: 12px !important;
+    border-width: 1px !important;
+    border-radius: 3px !important;
+    overflow:  hidden !important;
+}
+.combo-select-head svg {
+    display: none !important;
+}
+.combo-select-body {
+    background-color: rgb(0, 59, 126) !important;
+    border-radius: 3px !important;
+    font-size: 14px !important;
+}
+.combo-select-item {
+    font-size:12px !important;
+    line-height: 28px !important;
+    overflow: hidden !important;
+    height: 30px !important;
+}

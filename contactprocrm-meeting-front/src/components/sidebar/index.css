@@ -1,0 +1,15 @@
+.sidebar {
+    position: relative;
+    width: 400px;
+    height: 100%;
+    background-color: #C2C3C4;
+    border-radius: 5px;
+    padding: 5px;
+}
+.mark {
+    position: absolute;
+    border-radius: 50%;
+    top: 21px;
+    left: 90%;
+    zoom: 70%;
+}
