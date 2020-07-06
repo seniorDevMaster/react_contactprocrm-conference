@@ -1,5 +1,5 @@
 
-> tubertc@2.0.0 start /opt/react_maciel-video-meeting-master/maciel-video-meeting-back
+> tubertc@2.0.0 start /opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back
 > node server.js
 
 Http server is running on Port: 3000
@@ -12,7 +12,7 @@ Error: listen EADDRINUSE: address already in use :::3000
     at Server.setupListenHandle [as _listen2] (net.js:1301:14)
     at listenInCluster (net.js:1349:12)
     at Server.listen (net.js:1437:7)
-    at Object.<anonymous> (/opt/react_maciel-video-meeting-master/maciel-video-meeting-back/server.js:34:53)
+    at Object.<anonymous> (/opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back/server.js:34:53)
     at Module._compile (internal/modules/cjs/loader.js:959:30)
     at Object.Module._extensions..js (internal/modules/cjs/loader.js:995:10)
     at Module.load (internal/modules/cjs/loader.js:815:32)
@@ -39,7 +39,7 @@ npm ERR! This is probably not a problem with npm. There is likely additional log
 npm ERR! A complete log of this run can be found in:
 npm ERR!     /home/webrtc/.npm/_logs/2020-06-11T11_21_29_925Z-debug.log
 
-> tubertc@2.0.0 start /opt/react_maciel-video-meeting-master/maciel-video-meeting-back
+> tubertc@2.0.0 start /opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back
 > node server.js
 
 Http server is running on Port: 3000
@@ -52,7 +52,7 @@ Error: listen EADDRINUSE: address already in use :::3000
     at Server.setupListenHandle [as _listen2] (net.js:1301:14)
     at listenInCluster (net.js:1349:12)
     at Server.listen (net.js:1437:7)
-    at Object.<anonymous> (/opt/react_maciel-video-meeting-master/maciel-video-meeting-back/server.js:34:53)
+    at Object.<anonymous> (/opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back/server.js:34:53)
     at Module._compile (internal/modules/cjs/loader.js:959:30)
     at Object.Module._extensions..js (internal/modules/cjs/loader.js:995:10)
     at Module.load (internal/modules/cjs/loader.js:815:32)
@@ -79,7 +79,7 @@ npm ERR! This is probably not a problem with npm. There is likely additional log
 npm ERR! A complete log of this run can be found in:
 npm ERR!     /home/webrtc/.npm/_logs/2020-06-11T11_21_55_184Z-debug.log
 
-> tubertc@2.0.0 start /opt/react_maciel-video-meeting-master/maciel-video-meeting-back
+> tubertc@2.0.0 start /opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back
 > node server.js
 
 Http server is running on Port: 3000
@@ -92,7 +92,7 @@ Error: listen EADDRINUSE: address already in use :::3000
     at Server.setupListenHandle [as _listen2] (net.js:1301:14)
     at listenInCluster (net.js:1349:12)
     at Server.listen (net.js:1437:7)
-    at Object.<anonymous> (/opt/react_maciel-video-meeting-master/maciel-video-meeting-back/server.js:34:53)
+    at Object.<anonymous> (/opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back/server.js:34:53)
     at Module._compile (internal/modules/cjs/loader.js:959:30)
     at Object.Module._extensions..js (internal/modules/cjs/loader.js:995:10)
     at Module.load (internal/modules/cjs/loader.js:815:32)
@@ -119,7 +119,7 @@ npm ERR! This is probably not a problem with npm. There is likely additional log
 npm ERR! A complete log of this run can be found in:
 npm ERR!     /home/webrtc/.npm/_logs/2020-06-11T11_26_54_719Z-debug.log
 
-> tubertc@2.0.0 start /opt/react_maciel-video-meeting-master/maciel-video-meeting-back
+> tubertc@2.0.0 start /opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back
 > node server.js
 
 Http server is running on Port: 3000
@@ -132,7 +132,7 @@ Error: listen EADDRINUSE: address already in use :::3000
     at Server.setupListenHandle [as _listen2] (net.js:1301:14)
     at listenInCluster (net.js:1349:12)
     at Server.listen (net.js:1437:7)
-    at Object.<anonymous> (/opt/react_maciel-video-meeting-master/maciel-video-meeting-back/server.js:34:53)
+    at Object.<anonymous> (/opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back/server.js:34:53)
     at Module._compile (internal/modules/cjs/loader.js:959:30)
     at Object.Module._extensions..js (internal/modules/cjs/loader.js:995:10)
     at Module.load (internal/modules/cjs/loader.js:815:32)

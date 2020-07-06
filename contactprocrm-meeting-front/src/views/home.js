@@ -22,13 +22,13 @@ function useWindowSize() {
 }
 
 function Home(props) {
-    console.log('------------------Home:')
+    // console.log('------------------Home:')
     const [width, height] = useWindowSize();
     const dispatch = useDispatch();
     useEffect(() => {
         const query = qs.parse(props.location.search);
         console.log('----------------query:', query)
-        console.log('----------------WebRTC.getInstance():', WebRTC.getInstance())
+        // console.log('----------------WebRTC.getInstance():', WebRTC.getInstance())
         WebRTC.getInstance().startRoom(dispatch, query.token, query.room, query.username);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

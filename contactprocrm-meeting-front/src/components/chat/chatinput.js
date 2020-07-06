@@ -9,6 +9,7 @@ const ChatInput = (props) => {
     const users = useSelector(state=>state.users);
     const onChange = (val)=>{
         // val = val.split('\n').join('<br>')
+        // console.log(val, '---------', val.split('\n').join('<br>'))
         if(users.length>0){
             dispatch({type: 'chat_add', value: {username: 'Me', userid:'me', text: val, align: 'right', time: Date.now()}})
             WebRTC.getInstance().sendMessage(val);

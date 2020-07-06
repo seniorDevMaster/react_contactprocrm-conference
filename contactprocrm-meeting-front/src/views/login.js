@@ -7,7 +7,7 @@ function Login(props) {
     const browserCompat = WebRTC.getInstance().checkBrowser() !== null;
     const [userName, setUserName] = useState(WebRTC.getInstance().getUserName());
     const [roomName, setRoomName] = useState(WebRTC.getInstance().generateRoomName());
-
+    console.log('login: ---------', userName, '--------', roomName)
     const token = qs.parse(props.location.search).token | '';
     const onStart = () => {
         // validate...

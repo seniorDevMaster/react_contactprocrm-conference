@@ -57,7 +57,7 @@ class EmojiField extends Component {
 
     onChange(e) {
         const value = e && e.target ? e.target.value : this.state.value;
-
+        // console.log('emoji/ value: ', value)
         this.setState({ value }, () => {
             // if (typeof this.props.onChange === 'function') {
                 // console.log(e);

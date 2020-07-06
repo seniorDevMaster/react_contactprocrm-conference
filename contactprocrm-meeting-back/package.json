@@ -15,11 +15,13 @@
         "video"
     ],
     "dependencies": {
-        "open-easyrtc": "*",
         "express": "*",
+        "handlebars": "*",
         "nconf": "*",
+        "node-sqlite": "0.0.2-security",
+        "open-easyrtc": "*",
         "socket.io": "*",
-        "handlebars": "*"
+        "sqlite3": "^5.0.0"
     },
     "devDependencies": {
         "jsdoc": "^3.6.3"

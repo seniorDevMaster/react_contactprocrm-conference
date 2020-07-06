@@ -28,8 +28,19 @@ webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'
 // webrtcApp.get('/', function(req, res){
 //     res.send('Maciel Backend Server is Running.');
 // });
+
+webrtcApp.get('/crmmeeting', function(req, res){
+   const { meeting_id, return_url, username, password } = req.body
+   res.send('Maciel Backend Server is Running.');
+})
+// Catch all to handle all other requests that come into the app.
+webrtcApp.use('*', (req, res) => {
+  res.status(404).json({ msg: 'Not Found' })
+})
+
 // By default the listening server port is 8080 unless set by nconf or Heroku
-var serverPort = 3000;
+// var serverPort = 3000;
+var serverPort = 3222;
 
 webServer = require('http').createServer(webrtcApp).listen(serverPort);
 console.log("Http server is running on Port: " + serverPort)
@@ -50,3 +61,31 @@ easyrtc.setOption('appIceServers', [
     }
 ]);
 easyrtc.listen(webrtcApp, socketServer);
+
+/// Chating
+var msgContent = []
+const saveMsgContent = (peerId, peerName, content)=>{
+   const retContent = {name:peerName, message: content.message, time: content.time}
+   msgContent.push(retContent);
+}
+
+easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback, next) {
+   switch(message.msgType){
+      case 'save_message_content':
+         const content = saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.content);
+         console.log('msgContent: ',msgContent, connectionObj)
+         callback({msgType:'set_message_content', msgData: content})
+         return true;
+   }
+  connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback, next);
+});
+
+var sqlite3 = require('sqlite3').verbose();
+var file = "hr";
+var db = new sqlite3.Database(file);
+db.all("SELECT first_name,last_name FROM employees", function(err, rows) {
+        rows.forEach(function (row) {
+            console.log(row.first_name, row.last_name);
+        })
+	});	
+db.close();

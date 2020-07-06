@@ -442,7 +442,7 @@ var VTCCore = {
         });
 
         easyrtc.initMediaSource(function() {
-            easyrtc.connect('maciel-video-meeting', function(myId) {
+            easyrtc.connect('contactprocrm-meeting', function(myId) {
                 easyrtc.joinRoom(roomName, null, function(roomName) {
                     _this.client = new VTCClient(myId, roomName, _this._errorFn);
 

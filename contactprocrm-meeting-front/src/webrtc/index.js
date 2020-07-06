@@ -44,14 +44,14 @@ class WebRTC {
     }
     createRoom(token, roomName) {
         window.localStorage.setItem('o', true)
-        window.localStorage.setItem('t', 'maciel-video-meeting')
+        window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
         window.location.href = '/room?username='+this.getUserName();
 
     }
     joinRoom(token, roomName) {
         window.localStorage.setItem('o', false)
-        window.localStorage.setItem('t', 'maciel-video-meeting')
+        window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
         window.location.href = '/room?username='+this.getUserName();
     }
@@ -177,7 +177,7 @@ class WebRTC {
                 // replace local stream
                 stream.getTracks().forEach((track)=>{local.addTrack(track)})
                 const video_me = document.getElementById(local.id)
-                console.log('onStreamConfigurationChange : ====== ',video_me);
+                // console.log('onStreamConfigurationChange : ====== ',video_me);
                 window.easyrtc.setVideoObjectSrc(video_me, stream)
                 // send it to remote
                 const peers = window.easyrtc.getPeerConnections()
@@ -227,6 +227,7 @@ class WebRTC {
 
         this.userName = userName;
         this.roomName = room ? room : window.localStorage.getItem('r');
+        console.log('roomName: ',this.roomName)
         if(!this.roomName){
             window.location.href = '/';
             return;
@@ -240,7 +241,7 @@ class WebRTC {
         this.owner = window.localStorage.getItem('o')
         this.token = window.localStorage.getItem('t');
 
-        console.log('--------owner : token :', this.owner, ' : ', this.token)
+        // console.log('--------owner : token :', this.owner, ' : ', this.token)
         window.localStorage.removeItem('o');
         window.localStorage.removeItem('t');
         window.localStorage.removeItem('r');
@@ -313,7 +314,25 @@ class WebRTC {
                             html: `"${client.idToName(peerId)}" sent a file.<br><a href='${URL.createObjectURL(blob)}' target='_blank'>Click here to download ${content.name}(${content.size}bytes)`,
                             align: 'left',
                             time: Date.now()}})
-
+                
+                const msgData = {
+                    message: `"${URL.createObjectURL(blob)}'`,
+                    time: Date.now()
+                }
+                window.easyrtc.sendServerMessage('save_message_content', 
+                    {
+                        clientId:   peerId, 
+                        clientName: client.idToName(peerId), 
+                        content:    msgData
+                    },
+                    function(msgType, data){
+                        if (msgType === 'set_message_content') {
+                            console.log('webrtc: file: ', data)
+                        }
+                    }, function(errorCode, errorText){
+                        console.log('errorCode: ', errorCode)
+                    }
+                );
                 // window.saveAs(blob, content.name)
                 // console.log(client.idToName(peerId), blob, URL.createObjectURL(blob));
             } else if(msgType === 'close'){
@@ -355,6 +374,24 @@ class WebRTC {
     }
     sendMessage(message){
         this.client.sendPeerMessage({room: this.roomName}, 'chat', message);
+        const msgData = {
+            message: message,
+            time: Date.now()
+        }
+        window.easyrtc.sendServerMessage('save_message_content', 
+            {
+                clientId:   this.client.getId(), 
+                clientName: this.client.idToName(this.client.getId()), 
+                content:    msgData
+            },
+            function(msgType, data){
+                if (msgType === 'set_message_content') {
+                    console.log('webrtc: sendMessage: ', data)
+                }
+            }, function(errorCode, errorText){
+                console.log('errorCode: ', errorCode)
+            }
+        );
     }
     onSetScreenCapture(){
         this.updateStreamMode();

@@ -1,3 +1,3 @@
 #/bin/bash
-cd /opt/react_maciel-video-meeting-master/maciel-video-meeting-back
+cd /opt/react_contactprocrm-meeting-master/contactprocrm-meeting-back
 npm start
