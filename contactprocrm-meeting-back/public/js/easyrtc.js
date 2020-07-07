@@ -6643,8 +6643,8 @@ var Easyrtc = function() {
     var dataEnabled = false;
     /** @private */
     // var serverPath = null; // this was null, but that was generating an error.
-    //var serverPath = 'http://localhost:3001/'; // this was null, but that was generating an error.
-    var serverPath = 'https://chat.contactprocrm.com/'; // this was null, but that was generating an error.
+    var serverPath = 'http://localhost:3222/'; // this was null, but that was generating an error.
+    // var serverPath = 'https://chat.contactprocrm.com/'; // this was null, but that was generating an error.
     // var serverPath = 'https://chat.contactprocrm.com/'; // this was null, but that was generating an error.
     /** @private */
     var roomOccupantListener = null;
@@ -11104,21 +11104,25 @@ var Easyrtc = function() {
                 delete self.roomJoin[roomName];
             }
             else {
-                roomItem = {};
-                roomItem[roomName] = {roomName: roomName};
-                sendSignalling(null, "roomLeave", {roomLeave: roomItem},
+              roomItem = {};
+              roomItem[roomName] = {roomName: roomName};
+              sendSignalling(null, "roomLeave", {roomLeave: roomItem},
                 function(msgType, msgData) {
+                    // if (msgType === 'roomCompleteClose') {
+                      // }
+                    console.log(msgType, msgData)
                     var roomData = msgData.roomData;
                     processRoomData(roomData);
                     if (successCallback) {
                         successCallback(roomName);
                     }
                 },
-                        function(errorCode, errorText) {
-                            if (failureCallback) {
-                                failureCallback(errorCode, errorText, roomName);
-                            }
-                        });
+                function(errorCode, errorText) {
+                    if (failureCallback) {
+                        failureCallback(errorCode, errorText, roomName);
+                    }
+                }
+              );
             }
         }
     };

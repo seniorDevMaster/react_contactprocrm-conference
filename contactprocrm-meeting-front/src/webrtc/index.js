@@ -315,28 +315,28 @@ class WebRTC {
                             align: 'left',
                             time: Date.now()}})
                 
+                var today = new Date().toLocaleDateString(undefined, {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
                 const msgData = {
                     message: `"${URL.createObjectURL(blob)}'`,
-                    time: Date.now()
+                    title: `"${client.idToName(peerId)}" sent a ${content.name} file.`,
+                    time: today
                 }
-                window.easyrtc.sendServerMessage('save_message_content', 
-                    {
-                        clientId:   peerId, 
-                        clientName: client.idToName(peerId), 
-                        content:    msgData
-                    },
-                    function(msgType, data){
-                        if (msgType === 'set_message_content') {
-                            console.log('webrtc: file: ', data)
-                        }
-                    }, function(errorCode, errorText){
-                        console.log('errorCode: ', errorCode)
-                    }
-                );
-                // window.saveAs(blob, content.name)
-                // console.log(client.idToName(peerId), blob, URL.createObjectURL(blob));
+
+                // const peerId = client.getId()
+                // const peerName = client.idToName(client.getId()) 
+                // const roomName = WebRTC.getInstance().roomName
+                WebRTC.getInstance().onSendSocketMessage(peerId, client.idToName(peerId), WebRTC.getInstance().roomName, msgData);
             } else if(msgType === 'close'){
+                console.log("Room closed...")
                 window.easyrtc.disconnect();
+                window.location.href = '/';
             } else {
                 // @todo FIXME: right now we don't have other messages to take care of
                 console.log('peerMessage => got a peer message that is unexpected');
@@ -360,38 +360,37 @@ class WebRTC {
             return;
         })
         .connect(userName, this.roomName, function(client) {
-            console.log('start local stream')
+            console.log('start local stream', client)
             var stream = client.getLocalStream();
             dispatch({type: 'user_add', value: {id: 'me', name: 'Me', stream} })
             setTimeout(()=>{
                 WebRTC.getInstance().onStreamConfigurationChange();
                 WebRTC.getInstance().client = client;
             }, 500);
-            // WebRTC.getInstance().createAudioMeter(stream);
             return;
         });
 
     }
     sendMessage(message){
         this.client.sendPeerMessage({room: this.roomName}, 'chat', message);
+
+        var today = new Date().toLocaleDateString(undefined, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        })
+
         const msgData = {
             message: message,
-            time: Date.now()
+            time: today
         }
-        window.easyrtc.sendServerMessage('save_message_content', 
-            {
-                clientId:   this.client.getId(), 
-                clientName: this.client.idToName(this.client.getId()), 
-                content:    msgData
-            },
-            function(msgType, data){
-                if (msgType === 'set_message_content') {
-                    console.log('webrtc: sendMessage: ', data)
-                }
-            }, function(errorCode, errorText){
-                console.log('errorCode: ', errorCode)
-            }
-        );
+        const peerId = this.client.getId()
+        const peerName = this.client.idToName(this.client.getId()) 
+        const roomName = WebRTC.getInstance().roomName
+        WebRTC.getInstance().onSendSocketMessage(peerId, peerName, roomName, msgData);
     }
     onSetScreenCapture(){
         this.updateStreamMode();
@@ -422,7 +421,22 @@ class WebRTC {
                 }
             }
         );
+    }
 
+    onSendSocketMessage(peerId, peerName, roomName, msgData) {
+        window.easyrtc.sendServerMessage('save_message_content', 
+            {
+                clientId:   peerId, 
+                clientName: peerName, 
+                roomName:   roomName,
+                content:    msgData
+            },
+            function(msgType, data){
+                console.log('webrtc: sendMessage: ', data)
+            }, function(errorCode, errorText){
+                console.log('errorText: ', errorText)
+            }
+        );
     }
 }
 export default WebRTC;

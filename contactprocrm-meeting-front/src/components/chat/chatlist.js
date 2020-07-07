@@ -16,7 +16,7 @@ const ChatList = (props) => {
     const chats = useSelector(state=>state.chats);
     let before_userid = '';
     let before_timestring = '';
-    console.log('chats: ', chats)
+    // console.log('chats: ', chats)
     return (
         <div className='chatlist'>
             {

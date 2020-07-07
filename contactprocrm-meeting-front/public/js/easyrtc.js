@@ -11104,21 +11104,25 @@ var Easyrtc = function() {
                 delete self.roomJoin[roomName];
             }
             else {
-                roomItem = {};
-                roomItem[roomName] = {roomName: roomName};
-                sendSignalling(null, "roomLeave", {roomLeave: roomItem},
+              roomItem = {};
+              roomItem[roomName] = {roomName: roomName};
+              sendSignalling(null, "roomLeave", {roomLeave: roomItem},
                 function(msgType, msgData) {
+                    // if (msgType === 'roomCompleteClose') {
+                      // }
+                    console.log(msgType, msgData)
                     var roomData = msgData.roomData;
                     processRoomData(roomData);
                     if (successCallback) {
                         successCallback(roomName);
                     }
                 },
-                        function(errorCode, errorText) {
-                            if (failureCallback) {
-                                failureCallback(errorCode, errorText, roomName);
-                            }
-                        });
+                function(errorCode, errorText) {
+                    if (failureCallback) {
+                        failureCallback(errorCode, errorText, roomName);
+                    }
+                }
+              );
             }
         }
     };
