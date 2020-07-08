@@ -28,62 +28,77 @@ webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'
 // webrtcApp.get('/', function(req, res){
 //     res.send('Maciel Backend Server is Running.');
 // });
-var username, password, meeting_id, return_url
+var meetingId, returnUrl
 var uname = "admin"
 var pwd = "Lokesh09876"
-
-webrtcApp.get('/crmmeeting', function(req, res){
-   // const { meeting_id, return_url, username, password } = req.body
+// var sqlite3 = require('sqlite3').verbose();
+// var db = new sqlite3.Database('crmcontact.db');
+var rooms = {}
+var resData = []
+var joinUrl = []
+// db.serialize(function() {
+//    db.run("CREATE TABLE if not exists meeting (dt TEXT, meeting_id TEXT, return_url TEXT)");
    
+   // db.get("SELECT COUNT(*) as cnt FROM meeting WHERE meeting_id=?", [meeting_id], (err, row) => {
+   //    if (err) {
+   //      return console.error(err.message);
+   //    }
+   //    if (row.cnt == 0) {
+   //       var stmt = db.prepare("INSERT INTO meeting VALUES (?,?,?)");
+   //       var date = new Date();
+   //       var cur_date = date.toLocaleTimeString();
+   //       stmt.run(cur_date, meeting_id, return_url);
+   //       stmt.finalize();
+   //    } else {
+   //       console.log('duplicate meeting id: ', meeting_id)
+   //    }
+   //    return true
+   // });
+
+//    db.each("SELECT dt, meeting_id, return_url FROM meeting", function(err, row) {
+//       console.log("User id : "+row.dt, row.meeting_id, row.return_url);
+//    });
+// });
+
+
+webrtcApp.get('/crmmeeting/joinurl', function(req, res){
+   // const { meeting_id, return_url, username, password } = req.body
+
+   const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
+   const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
+   const username = "admin"
+   const password = "Lokesh09876"
+
+   meetingId = meeting_id
+   returnUrl = return_url
    // Store datas from PHP backend
    if (username === uname && password === pwd) {
-      var meetingIDs = meeting_id.split("-")
-      
+      var meetingIDs = meeting_id.split("-")    
       // chance.word() + '-' + chance.hash().substring(0, 8);
+      var sub_url = username + meetingIDs[2] + meetingIDs[3]
+      joinUrl.push(sub_url)
 
-      var join_url = 'https://chat.contactprocrm.com/join?room=' + username + meetingIDs[2] + meetingIDs[3]
+      var join_url = 'https://chat.contactprocrm.com/join?room=' + sub_url
       res.send(join_url);
+
+   }
+})
+// db.close();
+
+webrtcApp.get('/crmmeeting/gethistory', function(req, res){
+   // const { username, password } = req.body
+   const username = "admin"
+   const password = "Lokesh09876"
+
+   // Store datas from PHP backend
+   if (username === uname && password === pwd) {
+      res.send(resData);
    }
 })
 // Catch all to handle all other requests that come into the app.
 webrtcApp.use('*', (req, res) => {
   res.status(404).json({ msg: 'Not Found' })
 })
-
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('crmcontact.db');
-
-
-username = "admin"
-password = "Lokesh09876"
-meeting_id = "107e1d63-34e3-cd9f-6da8-5d4272218021"
-return_url = "https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history"
-
-db.serialize(function() {
-   db.run("CREATE TABLE if not exists meeting (dt TEXT, meeting_id TEXT, return_url TEXT)");
-
-   db.get("SELECT COUNT(*) as cnt FROM meeting WHERE meeting_id=?", [meeting_id], (err, row) => {
-      if (err) {
-        return console.error(err.message);
-      }
-      if (row.cnt == 0) {
-         var stmt = db.prepare("INSERT INTO meeting VALUES (?,?,?)");
-         var date = new Date();
-         var cur_date = date.toLocaleTimeString();
-         stmt.run(cur_date, meeting_id, return_url);
-         stmt.finalize();
-      } else {
-         console.log('duplicate meeting id: ', meeting_id)
-      }
-      return true
-   });
-   
-   db.each("SELECT dt, meeting_id, return_url FROM meeting", function(err, row) {
-      console.log("User id : "+row.dt, row.meeting_id, row.return_url);
-   });
-});
-
-// db.close();
 
 // By default the listening server port is 8080 unless set by nconf or Heroku
 // var serverPort = 3000;
@@ -110,9 +125,6 @@ easyrtc.setOption('appIceServers', [
 easyrtc.listen(webrtcApp, socketServer);
 
 /// Chating
-var rooms = []
-var resData = []
-
 const saveMsgContent = (peerId, peerName, roomName, content)=>{
    const retMessage = {username:peerName, message: content.message, time: content.time}
    const retFile = {username:peerName, content: content.message, time: content.time, name: content.title}
@@ -130,26 +142,29 @@ easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback) {
    connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback);
 });
 
-easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
+easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback, next){
+   console.log("roomLeave", roomName, rooms)
    if (roomName != 'default') {
       if (!rooms[roomName]){
          console.error('ERROR!!!', roomName, rooms)
       }else{
          if (rooms[roomName].owner === connectionObj.socket.id) {
             var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
-            resData = {meeting_id: meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
+            const exithistory = {meeting_id: meetingId, return_url: returnUrl, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
+            resData.push(exithistory)
 
             delete rooms[roomName];
             console.log("Owner exit.", roomName, rooms, resData);
             connectionObj.events.emitDefault("easyrtcMsg", connectionObj, {msgType:'close', targetRoom: roomName}, callback);
          }
       }
+      connectionObj.events.emitDefault("roomLeave", connectionObj, roomName, callback, next);
    }
-   connectionObj.events.emitDefault("roomLeave", connectionObj, roomName, callback);
 });
 
 easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){
    if (roomName != 'default') {
+      console.log('join rooms: ', rooms)
       if(!rooms[roomName]){
          rooms[roomName] = {enterTime: Date.now(), owner: connectionObj.socket.id, chat: [], file: []};
       }
