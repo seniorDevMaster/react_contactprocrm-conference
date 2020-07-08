@@ -20,6 +20,7 @@
         "nconf": "*",
         "node-sqlite": "0.0.2-security",
         "open-easyrtc": "*",
+        "request": "^2.88.2",
         "socket.io": "*",
         "sqlite3": "^5.0.0"
     },
