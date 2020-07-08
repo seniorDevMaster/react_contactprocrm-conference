@@ -8,6 +8,7 @@ import './App.css';
 import Home from './views/home';
 import Login from './views/login';
 import Join from './views/join';
+import Blank from './views/blank';
 function App() {
 	useEffect(() => {
 	});
@@ -17,8 +18,9 @@ function App() {
 				<Switch>
 					<Route path="/room" component={Home}></Route>
 					<Route path="/join" component={Join}></Route>
-					<Route path="/login" component={Login}></Route>
-					<Route path="/" component={Login}></Route>
+					{/* <Route path="/login" component={Login}></Route> */}
+					{/* <Route path="/" component={Login}></Route> */}
+					<Route path="/" component={Blank}></Route>
 				</Switch>
 			</Router>
 		</div>

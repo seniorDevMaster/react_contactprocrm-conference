@@ -28,20 +28,20 @@ webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'
 // webrtcApp.get('/', function(req, res){
 //     res.send('Maciel Backend Server is Running.');
 // });
-var uname, username, pwd, password, meeting_id, return_url
-// var join_sub_url
-// var join_sub_urls = []
+var username, password, meeting_id, return_url
+var uname = "admin"
+var pwd = "Lokesh09876"
+
 webrtcApp.get('/crmmeeting', function(req, res){
    // const { meeting_id, return_url, username, password } = req.body
-
+   
    // Store datas from PHP backend
    if (username === uname && password === pwd) {
       var meetingIDs = meeting_id.split("-")
-      // join_sub_url = username + meetingIDs[0]
-      // join_sub_urls.push(join_sub_url)
-      // console.log('join_sub_url: ', join_sub_url, join_sub_urls)
+      
+      // chance.word() + '-' + chance.hash().substring(0, 8);
 
-      var join_url = 'https://chat.contactprocrm.com/join?room=' + username + meetingIDs[0]
+      var join_url = 'https://chat.contactprocrm.com/join?room=' + username + meetingIDs[2] + meetingIDs[3]
       res.send(join_url);
    }
 })
@@ -53,9 +53,8 @@ webrtcApp.use('*', (req, res) => {
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('crmcontact.db');
 
-uname = "admin"
+
 username = "admin"
-pwd = "Lokesh09876"
 password = "Lokesh09876"
 meeting_id = "107e1d63-34e3-cd9f-6da8-5d4272218021"
 return_url = "https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history"
@@ -111,52 +110,51 @@ easyrtc.setOption('appIceServers', [
 easyrtc.listen(webrtcApp, socketServer);
 
 /// Chating
-var msgContent = {}
-var messageContent = []
 var rooms = []
+var resData = []
 
 const saveMsgContent = (peerId, peerName, roomName, content)=>{
-   const retContent = {name:peerName, message: content.message, time: content.time, title: content.title}
+   const retMessage = {username:peerName, message: content.message, time: content.time}
+   const retFile = {username:peerName, content: content.message, time: content.time, name: content.title}
    
-   messageContent.push(retContent);
-   msgContent.roomName = messageContent
+   content.title ? rooms[roomName].file.push(retFile) : rooms[roomName].chat.push(retMessage)
 }
 
-easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback, next) {
+easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback) {
    switch(message.msgType){
       case 'save_message_content':
-         const content = saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.roomName, message.msgData.content);
-         callback({msgType:'set_message_content', msgData: content})
-         return true;
+         saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.roomName, message.msgData.content);
+      
+      return true
    }
-  connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback, next);
+   connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback);
 });
 
 easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
    if (roomName != 'default') {
-      connectionObj.events.emitDefault("easyrtcMsg", connectionObj, {msgType:'close', targetRoom: roomName}, callback);
-      
-      const exitRoom = rooms.filter((room)=>room.name == roomName)
-      console.log('exitRoom: ', exitRoom)
-      exitRoom['exittime'] = connectionObj.socket.handshake.time
-      console.log('roomLeave: exit room:----- ', exitRoom, msgContent)
-      
-      rooms = rooms.filter((room)=>room.name !== roomName)
-      console.log('roomLeave: rooms:----- ', rooms)
+      if (!rooms[roomName]){
+         console.error('ERROR!!!', roomName, rooms)
+      }else{
+         if (rooms[roomName].owner === connectionObj.socket.id) {
+            var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
+            resData = {meeting_id: meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
+
+            delete rooms[roomName];
+            console.log("Owner exit.", roomName, rooms, resData);
+            connectionObj.events.emitDefault("easyrtcMsg", connectionObj, {msgType:'close', targetRoom: roomName}, callback);
+         }
+      }
    }
+   connectionObj.events.emitDefault("roomLeave", connectionObj, roomName, callback);
 });
 
 easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){
    if (roomName != 'default') {
-      const roomInfo = {name: roomName, entertime: connectionObj.socket.handshake.time}
-      rooms.push(roomInfo)
-
-      rooms = Array.from(new Set(rooms.map(a => a.name)))
-      .map(name => {
-         return rooms.find(a => a.name === name)
-      })
-      
-      console.log('roomJoin :', rooms)
+      if(!rooms[roomName]){
+         rooms[roomName] = {enterTime: Date.now(), owner: connectionObj.socket.id, chat: [], file: []};
+      }
    }
    connectionObj.events.emitDefault("roomJoin", connectionObj, roomName, roomParam, callback);
- });
+});
+
+ 

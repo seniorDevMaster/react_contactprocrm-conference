@@ -40,6 +40,7 @@ class WebRTC {
         return this.roomName;
     }
     generateRoomName(){
+        console.log('generateRoomName: ------------- ' ,window, window.generateRoomName())
         return window.generateRoomName();
     }
     createRoom(token, roomName) {
@@ -141,14 +142,17 @@ class WebRTC {
         // .trigger('click');
     }
     exitRoom(){
-        if(this.owner === 'true'){
-            this.sendMessage('Room closed.');
-            window.easyrtc.sendPeerMessage({
-                targetRoom: WebRTC.getInstance().roomName
-            }, 'close');
-            this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
-        }
+        // if(this.owner === 'true'){
+        //     this.sendMessage('Room closed.');
+        //     window.easyrtc.sendPeerMessage({
+        //         targetRoom: WebRTC.getInstance().roomName
+        //     }, 'close');
+        //     this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
+        // }
         window.easyrtc.disconnect();
+        this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
+
+        // window.location.href = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history';
     }
     updateStreamMode(){
         // get getUserMedia mode
@@ -186,7 +190,7 @@ class WebRTC {
                     if(peer.cancelled)
                         continue;
                     peer.pc.getSenders().map((sender) => {
-                        console.log(id, sender);
+                        // console.log(id, sender);
                         sender.replaceTrack(stream.getTracks().find(track=>{
                             return track.kind === sender.track.kind
                         }));
@@ -241,7 +245,6 @@ class WebRTC {
         this.owner = window.localStorage.getItem('o')
         this.token = window.localStorage.getItem('t');
 
-        // console.log('--------owner : token :', this.owner, ' : ', this.token)
         window.localStorage.removeItem('o');
         window.localStorage.removeItem('t');
         window.localStorage.removeItem('r');
@@ -329,14 +332,25 @@ class WebRTC {
                     time: today
                 }
 
-                // const peerId = client.getId()
-                // const peerName = client.idToName(client.getId()) 
-                // const roomName = WebRTC.getInstance().roomName
                 WebRTC.getInstance().onSendSocketMessage(peerId, client.idToName(peerId), WebRTC.getInstance().roomName, msgData);
             } else if(msgType === 'close'){
-                console.log("Room closed...")
+                console.log("Room closed on PeerMessage...")
                 window.easyrtc.disconnect();
-                window.location.href = '/';
+                WebRTC.getInstance().dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
+
+                // console.log(content)
+                // window.location.href = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history';
+
+                // WebRTC.getInstance().exitRoom()
+                // window.easyrtc.disconnect();
+            // } else if(msgType === 'closeOwner'){
+            //     console.log("Room closed on Owner...")
+
+            //     WebRTC.getInstance().exitRoom()
+            // } else if(msgType === 'closeUser'){
+            //     console.log("Room closed on User...")
+            //     window.easyrtc.disconnect();
+            //     // window.location.href = '/';
             } else {
                 // @todo FIXME: right now we don't have other messages to take care of
                 console.log('peerMessage => got a peer message that is unexpected');
@@ -432,9 +446,9 @@ class WebRTC {
                 content:    msgData
             },
             function(msgType, data){
-                console.log('webrtc: sendMessage: ', data)
+                console.log('webrtc: sendMessage: ')
             }, function(errorCode, errorText){
-                console.log('errorText: ', errorText)
+                console.log('errorText: ')
             }
         );
     }
