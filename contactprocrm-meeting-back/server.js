@@ -11,11 +11,15 @@ var fs = require('fs');
 var Handlebars = require('handlebars');
 var io = require('socket.io');
 const request = require('request')
+var bodyParser = require('body-parser')
 
 var webServer = null;
 var webrtcApp = express();
 
 var debugMode = false;
+
+webrtcApp.use(bodyParser.urlencoded({ extended: false }))
+webrtcApp.use(bodyParser.json())
 // Set up routes for static resources
 webrtcApp.use('/', express.static(__dirname + '/public'));
 webrtcApp.use('/room', express.static(__dirname + '/public'));
@@ -35,7 +39,6 @@ var rooms = {}
 
 webrtcApp.post('/crmmeeting/joinurl', function(req, res){
    const { meeting_id, return_url, username, password } = req.body
-
    // const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
    // const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
    // const username = "admin"
@@ -44,13 +47,16 @@ webrtcApp.post('/crmmeeting/joinurl', function(req, res){
    // Store datas from PHP backend
    if (password === pwd) {
       var meetingIDs = meeting_id.split("-")    
-      var sub_url = username + meetingIDs[2] + meetingIDs[3]
-
-      joinInfo[sub_url] = {meeting_id: meeting_id, return_url: return_url}
-      // console.log('joinInfo--------------:', joinInfo)
+      
+      var sub_url = username + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
+      // var sub_url = username + meeting_id.replace(/-/g, '')
       
       var join_url = 'https://chat.contactprocrm.com/join?room=' + sub_url
-      res.send(join_url);
+
+      joinInfo[sub_url] = {meeting_id: meeting_id, return_url: return_url}
+      console.log('joinInfo--------------:', joinInfo)
+      var new_join_url = '{"join_url":"'+join_url+'"}';
+      res.send(new_join_url);
    }
 })
 
@@ -60,8 +66,8 @@ webrtcApp.use('*', (req, res) => {
 })
 
 // By default the listening server port is 8080 unless set by nconf or Heroku
-// var serverPort = 3000;
-var serverPort = 3222;
+var serverPort = 3000;
+// var serverPort = 3222;
 
 webServer = require('http').createServer(webrtcApp).listen(serverPort);
 console.log("Http server is running on Port: " + serverPort)
@@ -111,8 +117,14 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
       }else{
          if (rooms[roomName].owner === connectionObj.socket.id) {
             var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
-            console.log('joinInfo: ', joinInfo)
+
+            if (!joinInfo[roomName]) {
+              console.error('ERROR!!! Join URL first.')
+              return;
+            }
+
             const exithistory = {meeting_id: joinInfo[roomName].meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
+            console.log('joinUrl -------------------------', joinInfo, roomName, exithistory)
             
             for(const childConnectionObj of rooms[roomName].child){
                childConnectionObj.disconnect(()=>{});
@@ -124,6 +136,9 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
                   reqData: exithistory
                }
             }, (error, res, body) => {
+              // console.log('return res---------------------', res)
+              // console.log('return error---------------------', error)
+              // console.log('return body---------------------', body)
                if (error) {
                   console.error(error)
                   return
