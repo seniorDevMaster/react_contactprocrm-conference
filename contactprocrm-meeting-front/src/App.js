@@ -18,9 +18,9 @@ function App() {
 				<Switch>
 					<Route path="/room" component={Home}></Route>
 					<Route path="/join" component={Join}></Route>
-					{/* <Route path="/login" component={Login}></Route> */}
-					{/* <Route path="/" component={Login}></Route> */}
-					<Route path="/" component={Blank}></Route>
+					<Route path="/login" component={Login}></Route>
+					<Route path="/" component={Login}></Route>
+					{/* <Route path="/" component={Blank}></Route> */}
 				</Switch>
 			</Router>
 		</div>

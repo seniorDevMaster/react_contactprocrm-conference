@@ -31,18 +31,16 @@ webrtcApp.use('/static/css', express.static(__dirname + '/public/static/css'));
 webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
 webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
 
-var joinInfo = {}
-var uname = "admin"
 var pwd = "Lokesh09876"
+var joinInfo = {}
 var rooms = {}
 
-
 webrtcApp.post('/crmmeeting/joinurl', function(req, res){
-   const { meeting_id, return_url, username, password } = req.body
-   // const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
-   // const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
-   // const username = "admin"
-   // const password = "Lokesh09876"
+   // const { meeting_id, return_url, username, password } = req.body
+   const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
+   const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
+   const username = "admin"
+   const password = "Lokesh09876"
 
    // Store datas from PHP backend
    if (password === pwd) {
@@ -66,8 +64,8 @@ webrtcApp.use('*', (req, res) => {
 })
 
 // By default the listening server port is 8080 unless set by nconf or Heroku
-var serverPort = 3000;
-// var serverPort = 3222;
+// var serverPort = 3000;
+var serverPort = 3222;
 
 webServer = require('http').createServer(webrtcApp).listen(serverPort);
 console.log("Http server is running on Port: " + serverPort)

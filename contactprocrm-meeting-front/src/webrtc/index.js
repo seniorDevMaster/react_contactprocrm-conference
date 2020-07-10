@@ -304,6 +304,7 @@ class WebRTC {
                 // dispatch({type:'user_audio', value: {audio: content.rms});
                 // AudioMeter.handlePeerMessage(peerId, content);
             } else if (msgType === 'file'){
+                console.log('-----------file')
                 var arr = content.binaryContents.split(','), mime = arr[0].match(/:(.*?);/)[1],
                 bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
                 while(n--){
