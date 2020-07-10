@@ -2,13 +2,15 @@ import React, { useEffect } from 'react';
 import {
 	BrowserRouter as Router,
 	Switch,
-	Route
+	Route,
+	Redirect
 } from 'react-router-dom';
 import './App.css';
 import Home from './views/home';
 import Login from './views/login';
 import Join from './views/join';
-import Blank from './views/blank';
+import NotFoundPage from './views/NotFoundPage';
+
 function App() {
 	useEffect(() => {
 	});
@@ -19,10 +21,11 @@ function App() {
 					<Route path="/room" component={Home}></Route>
 					<Route path="/join" component={Join}></Route>
 					<Route path="/login" component={Login}></Route>
-					<Route path="/" component={Login}></Route>
-					{/* <Route path="/" component={Blank}></Route> */}
-				</Switch>
-			</Router>
+					{/* <Route path="/" component={Login}></Route> */}
+					<Route path="/404" component={NotFoundPage} ></Route>
+					<Redirect to="/404" ></Redirect>
+                </Switch>
+            </Router>
 		</div>
 	);
 }

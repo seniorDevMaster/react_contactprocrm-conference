@@ -7,16 +7,33 @@
 
 var easyrtc = require('open-easyrtc');
 var express = require('express');
-var fs = require('fs');
-var Handlebars = require('handlebars');
 var io = require('socket.io');
-const request = require('request')
 var bodyParser = require('body-parser')
+const request = require('request')
+const cors = require('cors')
 
 var webServer = null;
 var webrtcApp = express();
 
-var debugMode = false;
+const corsOpts = {
+   origin: '*',
+   methods: [
+     'GET',
+     'POST',
+   ],
+   allowedHeaders: [
+     'Content-Type',
+   ],
+};
+
+webrtcApp.use(cors(corsOpts));
+webrtcApp.use(function(req, res, next) {
+   res.setHeader('Access-Control-Allow-Origin', '*');
+   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+   res.setHeader('Access-Control-Allow-Credentials', true);
+   next();
+});
 
 webrtcApp.use(bodyParser.urlencoded({ extended: false }))
 webrtcApp.use(bodyParser.json())
@@ -32,10 +49,9 @@ webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
 webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
 
 var pwd = "Lokesh09876"
-var joinInfo = {}
 var rooms = {}
 
-webrtcApp.post('/crmmeeting/joinurl', function(req, res){
+webrtcApp.get('/crmmeeting/joinurl', function(req, res){
    // const { meeting_id, return_url, username, password } = req.body
    const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
    const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
@@ -46,15 +62,35 @@ webrtcApp.post('/crmmeeting/joinurl', function(req, res){
    if (password === pwd) {
       var meetingIDs = meeting_id.split("-")    
       
-      var sub_url = username + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
+      var room_name = username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
       // var sub_url = username + meeting_id.replace(/-/g, '')
-      
-      var join_url = 'https://chat.contactprocrm.com/join?room=' + sub_url
+      var create_url = 'https://chat.contactprocrm.com/login?room=' + room_name + '&username=' + username
+      var join_url = 'https://chat.contactprocrm.com/join?room=' + room_name
 
-      joinInfo[sub_url] = {meeting_id: meeting_id, return_url: return_url}
-      console.log('joinInfo--------------:', joinInfo)
-      var new_join_url = '{"join_url":"'+join_url+'"}';
-      res.send(new_join_url);
+      rooms[room_name] = {meeting_id: meeting_id, return_url: return_url, enterRoom: false, chat: [], file: [], child: []}
+      console.log('rooms on joinUrl--------------:', rooms)
+      
+      res.send({create_url: create_url, join_url: join_url});
+   }
+})
+
+webrtcApp.post('/checkValidRoom', function(req, res) {
+   const { type, roomName } = req.body
+
+   if( type == 0) { //0: owner, 1: user
+      if (rooms[roomName]) {
+         res.send(true)
+         rooms[roomName].enterRoom = true
+      }
+      else
+         res.send(false)
+   } else {
+      if (rooms[roomName] && rooms[roomName].enterRoom)
+         res.send({ status: 0}) // room & owner available
+      else if (rooms[roomName] && !rooms[roomName].enterRoom)
+         res.send({ status: 1}) // room available & owner not available
+      else 
+         res.send({ status: 2}) // room not available & owner not available
    }
 })
 
@@ -92,8 +128,9 @@ const saveMsgContent = (peerId, peerName, roomName, content)=>{
    const retMessage = {username:peerName, message: content.message, time: content.time}
    const retFile = {username:peerName, content: content.message, time: content.time, name: content.title}
    
-   if (roomName != undefined || roomName != null)
+   if(rooms[roomName]){
       content.title ? rooms[roomName].file.push(retFile) : rooms[roomName].chat.push(retMessage)
+   }
 }
 
 easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback) {
@@ -113,37 +150,37 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
       if (!rooms[roomName]){
          console.error('ERROR!!!', roomName, rooms)
       }else{
+         console.log('roomLeave -------------------------', rooms, roomName)
          if (rooms[roomName].owner === connectionObj.socket.id) {
             var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
 
-            if (!joinInfo[roomName]) {
+            if (!rooms[roomName]) {
               console.error('ERROR!!! Join URL first.')
               return;
             }
 
-            const exithistory = {meeting_id: joinInfo[roomName].meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
-            console.log('joinUrl -------------------------', joinInfo, roomName, exithistory)
+            const exithistory = {meeting_id: rooms[roomName].meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
+            console.log('history -------------------------', rooms, roomName, exithistory)
             
             for(const childConnectionObj of rooms[roomName].child){
                childConnectionObj.disconnect(()=>{});
             }
-            delete rooms[roomName];
+            // delete rooms[roomName];
             
-            request.post(joinInfo[roomName].return_url, {
+            request.post(rooms[roomName].return_url, {
                json: {
                   reqData: exithistory
                }
             }, (error, res, body) => {
-              // console.log('return res---------------------', res)
-              // console.log('return error---------------------', error)
-              // console.log('return body---------------------', body)
                if (error) {
                   console.error(error)
                   return
                }
-               // console.log(`statusCode: ${res.statusCode}`)
-               // console.log(body)
-               delete joinInfo[roomName];
+               rooms[roomName].enterRoom = false
+               rooms[roomName].chat = []
+               rooms[roomName].file = []
+               rooms[roomName].child = []
+               // delete rooms[roomName];
             })
          }
       }
@@ -152,11 +189,19 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
 
 easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){
    if (roomName != 'default') {
-      if(!rooms[roomName]){
-         rooms[roomName] = {enterTime: Date.now(), owner: connectionObj.socket.id, chat: [], file: [], child: []};
+      console.log('join rooms: before: ', roomName, rooms)
+      if(!rooms[roomName])
+         return
+
+      if(rooms[roomName].enterRoom && rooms[roomName].child.length === 0) {
+         rooms[roomName].enterTime = Date.now()
+         rooms[roomName].owner = connectionObj.socket.id
+         rooms[roomName].chat = []
+         rooms[roomName].file = []
+         rooms[roomName].child.push(connectionObj); // means owner
+         // rooms[roomName] = {enterTime: Date.now(), enterRoom: true, owner: connectionObj.socket.id, chat: [], file: [], child: []};
       }
-      rooms[roomName].child.push(connectionObj);
-      // console.log('join rooms: ', roomName, rooms)
+      console.log('join rooms: after: ', roomName, rooms)
    }
    connectionObj.events.emitDefault("roomJoin", connectionObj, roomName, roomParam, callback);
 });

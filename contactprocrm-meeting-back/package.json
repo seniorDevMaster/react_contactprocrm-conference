@@ -22,7 +22,8 @@
         "open-easyrtc": "*",
         "request": "^2.88.2",
         "socket.io": "*",
-        "sqlite3": "^5.0.0"
+        "sqlite3": "^5.0.0",
+        "cors": "^2.8.5"
     },
     "devDependencies": {
         "jsdoc": "^3.6.3"

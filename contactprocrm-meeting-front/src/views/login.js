@@ -1,20 +1,56 @@
-import React, { useState } from "react";
+import React, { useState } from "react"
 import * as qs from 'query-string'
+
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import WebRTC from '../webrtc';
-import Slideshow from "../components/slideshow";
+import Slideshow from "../components/slideshow"
+import { API_URL } from '../config'
 
 function Login(props) {
     const browserCompat = WebRTC.getInstance().checkBrowser() !== null;
-    const [userName, setUserName] = useState(WebRTC.getInstance().getUserName());
-    const [roomName, setRoomName] = useState(WebRTC.getInstance().generateRoomName());
-    console.log('login: ---------', userName, '--------', roomName)
+    // const [userName, setUserName] = useState(WebRTC.getInstance().getUserName());
+    // const [roomName, setRoomName] = useState(WebRTC.getInstance().generateRoomName());
+    
+    // http://localhost:3000/login?room=admin-34e3cd9f6da8&username=admin
+    
+    const query = qs.parse(props.location.search);
+    const userName = query.username
+    const roomName = query.room
+
     const token = qs.parse(props.location.search).token | '';
+    
     const onStart = () => {
         // validate...
-        if (userName!=='' && roomName !== ''){
-            WebRTC.getInstance().setUserName(userName);
-            WebRTC.getInstance().createRoom(token, roomName);
-        }
+        fetch(`${API_URL}/checkValidRoom`, {
+            method: 'pOSt',
+            headers: {
+                aCcePt: 'aPpliCaTIon/JsOn',
+                'cOntENt-type': 'applicAtion/JSoN'
+            },
+            body: JSON.stringify({ type: 0, roomName: roomName })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data) {
+                toast('🦄 Invalid Room!', {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                });
+            } else {
+                if (userName!=='' && roomName !== ''){
+                    WebRTC.getInstance().setUserName(userName);
+                    WebRTC.getInstance().createRoom(token, roomName);
+                }
+            }
+        })
+        .catch(err => console.log(err))
     }
 
     return <div className='login'>
@@ -36,7 +72,7 @@ function Login(props) {
                                 Your Name:
                             </td>
                             <td>
-                                <input className='logininput' type='text' placeholder='Enter your name...' value={userName} onChange={(e)=>{setUserName(e.target.value)}}></input>
+                                <input className='logininput' type='text' placeholder='Enter your name...' value={userName} disabled></input>
                             </td>
                         </tr>
                         <tr>
@@ -44,7 +80,7 @@ function Login(props) {
                                 Room Name:
                             </td>
                             <td>
-                                <input type='text' className='logininput' placeholder='Enter room name...' value={roomName} onChange={(e)=>{setRoomName(e.value)}} disabled></input>
+                                <input type='text' className='logininput' placeholder='Enter room name...' value={roomName} disabled></input>
                             </td>
                         </tr>
                         <tr>
@@ -55,6 +91,18 @@ function Login(props) {
                     </tbody>
                 </table>
             </div>
+            <ToastContainer
+                position="top-center"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
+            
         </div>;
 }
 export default Login;

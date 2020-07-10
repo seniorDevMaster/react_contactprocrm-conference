@@ -25,10 +25,13 @@ function Home(props) {
     // console.log('------------------Home:')
     const [width, height] = useWindowSize();
     const dispatch = useDispatch();
+    var owner = false;
+    const query = qs.parse(props.location.search);
+    if ('owner' in query) {
+        owner = true
+    }
+
     useEffect(() => {
-        const query = qs.parse(props.location.search);
-        console.log('----------------query:', query)
-        // console.log('----------------WebRTC.getInstance():', WebRTC.getInstance())
         WebRTC.getInstance().startRoom(dispatch, query.token, query.room, query.username);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -39,7 +42,7 @@ function Home(props) {
                 <tbody>
                     <tr>
                         <td style={{width: '100%'}}>
-                            <NavBar />
+                            <NavBar owner={owner}/>
                             <ScreenContainer />
                         </td>
                         <td>

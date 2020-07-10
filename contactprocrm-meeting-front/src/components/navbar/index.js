@@ -31,7 +31,7 @@ import Dialog from '../dialog';
 import SettingDialog from '../dialog/settingDialog';
 import InviteDialog from '../dialog/inviteDialog';
 
-function NavBar() {
+function NavBar(props) {
     const dispatch = useDispatch();
     const camera = useSelector(state => state.buttons.camera);
     const mic = useSelector(state => state.buttons.mic);
@@ -39,6 +39,7 @@ function NavBar() {
     const chat = useSelector(state => state.buttons.chat);
     const [sharedscreen, setSharedscreen] = useState('on')
     const fullscreen = useSelector(state => state.buttons.fullscreen);
+    const owner = props.owner
 
     const toggleChange = (type1, value1)=>{
         dispatch( {type: type1, value: value1 ==='on'?'off':'on'});
@@ -78,8 +79,11 @@ function NavBar() {
         }
     }
     const exitRoom = ()=>{
-        WebRTC.getInstance().exitRoom();
+        WebRTC.getInstance().exitRoom(owner);
     }
+
+    // http://localhost:3000/login?room=admin-34e3cd9f6da8&username=admin
+
     return (
         <div className='center'>
             <div className='navbar'>
@@ -96,7 +100,7 @@ function NavBar() {
                     <Button on={setting} alt={`Video / Audio setting`}  status={'on'} onClick={()=>{Dialog.show('settingdialog')}} ></Button>
                 </span>
                 <span style={{zoom:0.8, padding:7}}>
-                    <Button on={WebRTC.getInstance().owner==='true'? close : disconnect} alt={`Exit room`}  status={'on'} onClick={exitRoom} ></Button>
+                    <Button on={owner? close : disconnect} alt={`Exit room`}  status={'on'} onClick={exitRoom} ></Button>
                 </span>
             </div>
             <SettingDialog />

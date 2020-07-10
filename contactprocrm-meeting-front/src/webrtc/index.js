@@ -3,6 +3,7 @@ class WebRTC {
     client = null;
     roomName = ''
     userName = ''
+    owner    = false
     videoQualities = [
         {text:'SD (360p - 1Mb/s)', value:{width: 480, height:360, frameRate: 10}},
         {text:'HD (720p - 2Mb/s)', value:{width: 1280, height:720, frameRate: 10}},
@@ -44,14 +45,17 @@ class WebRTC {
         return window.generateRoomName();
     }
     createRoom(token, roomName) {
-        window.localStorage.setItem('o', true)
+        // window.localStorage.setItem('o', true)
         window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
-        window.location.href = '/room?username='+this.getUserName();
+        this.owner = true
+        window.location.href = '/room?username='+this.getUserName()+'&owner';
 
     }
     joinRoom(token, roomName) {
-        window.localStorage.setItem('o', false)
+        // window.localStorage.setItem('o', false)
+        this.owner = false
+
         window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
         window.location.href = '/room?username='+this.getUserName();
@@ -141,7 +145,7 @@ class WebRTC {
         fileInput[0].click();
         // .trigger('click');
     }
-    exitRoom(){
+    exitRoom(owner){
         // if(this.owner === 'true'){
         //     this.sendMessage('Room closed.');
         //     window.easyrtc.sendPeerMessage({
@@ -152,6 +156,10 @@ class WebRTC {
         window.easyrtc.disconnect();
         this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
 
+        if (owner) {
+            window.location.href = '/login?room='+WebRTC.getInstance().roomName+'&username='+this.getUserName()+'&owner';
+        }
+        // http://localhost:3000/login?room=admin-34e3cd9f6da8&username=admin
         // window.location.href = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history';
     }
     updateStreamMode(){
@@ -242,10 +250,11 @@ class WebRTC {
         this.currentAudioDevice = this.audioDevices.length === 0 ? null: this.audioDevices[0];
         // this.updateStreamMode()
 
-        this.owner = window.localStorage.getItem('o')
+        // this.owner = window.localStorage.getItem('o')
+        // this.owner = WebRTC.getInstance().owner
         this.token = window.localStorage.getItem('t');
 
-        window.localStorage.removeItem('o');
+        // window.localStorage.removeItem('o');
         window.localStorage.removeItem('t');
         window.localStorage.removeItem('r');
 
@@ -304,7 +313,6 @@ class WebRTC {
                 // dispatch({type:'user_audio', value: {audio: content.rms});
                 // AudioMeter.handlePeerMessage(peerId, content);
             } else if (msgType === 'file'){
-                console.log('-----------file')
                 var arr = content.binaryContents.split(','), mime = arr[0].match(/:(.*?);/)[1],
                 bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
                 while(n--){
@@ -328,8 +336,8 @@ class WebRTC {
                     second: '2-digit'
                 })
                 const msgData = {
-                    message: `"${URL.createObjectURL(blob)}'`,
-                    title: `"${client.idToName(peerId)}" sent a ${content.name} file.`,
+                    message: `"${content.binaryContents}'`,
+                    title: `"${content.name}`,
                     time: today
                 }
 
