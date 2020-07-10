@@ -100,8 +100,8 @@ webrtcApp.use('*', (req, res) => {
 })
 
 // By default the listening server port is 8080 unless set by nconf or Heroku
-// var serverPort = 3000;
-var serverPort = 3222;
+var serverPort = 3000;
+// var serverPort = 3222;
 
 webServer = require('http').createServer(webrtcApp).listen(serverPort);
 console.log("Http server is running on Port: " + serverPort)
