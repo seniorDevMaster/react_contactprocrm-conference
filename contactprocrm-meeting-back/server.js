@@ -51,6 +51,13 @@ webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'
 var pwd = "Lokesh09876"
 var rooms = {}
 
+var sqlite3 = require('sqlite3').verbose();
+var db = new sqlite3.Database('crmcontact.db');
+
+db.serialize(function() {
+   db.run("CREATE TABLE if not exists meeting (dt TEXT, meeting_id TEXT, return_url TEXT)");
+});
+
 webrtcApp.post('/crmmeeting/joinurl', function(req, res){
    const { meeting_id, return_url, username, password } = req.body
    // const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
@@ -63,31 +70,57 @@ webrtcApp.post('/crmmeeting/joinurl', function(req, res){
       var meetingIDs = meeting_id.split("-")    
       
       var room_name = username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
-      // var sub_url = username + meeting_id.replace(/-/g, '')
       var create_url = 'https://chat.contactprocrm.com/login?room=' + room_name + '&username=' + username
       var join_url = 'https://chat.contactprocrm.com/join?room=' + room_name
-
-      rooms[room_name] = {meeting_id: meeting_id, return_url: return_url, enterRoom: false, chat: [], file: [], child: []}
-      console.log('rooms on joinUrl--------------:', rooms)
+      var enter_room = false;
       
-      res.send({create_url: create_url, join_url: join_url});
+      db.get("SELECT COUNT(*) as cnt FROM meeting WHERE meeting_id=?", [meeting_id], (err, row) => {
+         if (err) {
+           return console.error(err.message);
+         }
+         if (row.cnt == 0) {
+            var stmt = db.prepare("INSERT INTO meeting VALUES (?,?,?,?,?,?,?)");
+            var date = new Date();
+            var cur_date = date.toLocaleTimeString();
+            stmt.run(cur_date, meeting_id, return_url, create_url, join_url, room_name, enter_room);
+            stmt.finalize();
+         } else {
+            console.log('duplicate meeting id: ', meeting_id)
+         }
+         return true
+      });
+      
+      // rooms[room_name] = {meeting_id: meeting_id, return_url: return_url, enter_room: false}
+      // console.log('rooms on joinUrl--------------:', rooms)
+
+      db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting", function(err, row) {
+         rooms[row.room_name] = {accessDate: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room}
+         console.log("All Info in PHP Post: " + rooms);
+      });
+
+      // res.send({create_url: create_url, join_url: join_url});
+      res.send(rooms);
    }
 })
 
 webrtcApp.post('/checkValidRoom', function(req, res) {
    const { type, roomName } = req.body
 
+   db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting", function(err, row) {
+      rooms[row.room_name] = {access_date: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room, chat: [], file: [], child: []}
+   });
+
    if( type == 0) { //0: owner, 1: user
       if (rooms[roomName]) {
+         rooms[roomName].enter_room = true
          res.send(true)
-         rooms[roomName].enterRoom = true
       }
       else
          res.send(false)
    } else {
-      if (rooms[roomName] && rooms[roomName].enterRoom)
+      if (rooms[roomName] && rooms[roomName].enter_room)
          res.send({ status: 0}) // room & owner available
-      else if (rooms[roomName] && !rooms[roomName].enterRoom)
+      else if (rooms[roomName] && !rooms[roomName].enter_room)
          res.send({ status: 1}) // room available & owner not available
       else 
          res.send({ status: 2}) // room not available & owner not available
@@ -143,14 +176,13 @@ easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback) {
    connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback);
 });
 
-easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
+easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){  // Owner leave the Room
    connectionObj.events.emitDefault("roomLeave", connectionObj, roomName, callback);
 
    if (roomName != 'default') {
       if (!rooms[roomName]){
          console.error('ERROR!!!', roomName, rooms)
       }else{
-         console.log('roomLeave -------------------------', rooms, roomName)
          if (rooms[roomName].owner === connectionObj.socket.id) {
             var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
 
@@ -160,12 +192,11 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
             }
 
             const exithistory = {meeting_id: rooms[roomName].meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
-            console.log('history -------------------------', rooms, roomName, exithistory)
+            console.log('History -------------------------', rooms, roomName, exithistory)
             
             for(const childConnectionObj of rooms[roomName].child){
                childConnectionObj.disconnect(()=>{});
             }
-            // delete rooms[roomName];
             
             request.post(rooms[roomName].return_url, {
                json: {
@@ -176,32 +207,29 @@ easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){
                   console.error(error)
                   return
                }
-               rooms[roomName].enterRoom = false
+               rooms[roomName].enter_room = false
                rooms[roomName].chat = []
                rooms[roomName].file = []
                rooms[roomName].child = []
-               // delete rooms[roomName];
             })
          }
       }
    }
 });
 
-easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){
+easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){  // Owner create the Room
    if (roomName != 'default') {
-      console.log('join rooms: before: ', roomName, rooms)
       if(!rooms[roomName])
          return
 
-      if(rooms[roomName].enterRoom && rooms[roomName].child.length === 0) {
+      if(rooms[roomName].enter_room && rooms[roomName].child.length === 0) {
          rooms[roomName].enterTime = Date.now()
          rooms[roomName].owner = connectionObj.socket.id
          rooms[roomName].chat = []
          rooms[roomName].file = []
          rooms[roomName].child.push(connectionObj); // means owner
-         // rooms[roomName] = {enterTime: Date.now(), enterRoom: true, owner: connectionObj.socket.id, chat: [], file: [], child: []};
       }
-      console.log('join rooms: after: ', roomName, rooms)
+      console.log('All data after joining to room: ', rooms)
    }
    connectionObj.events.emitDefault("roomJoin", connectionObj, roomName, roomParam, callback);
 });
