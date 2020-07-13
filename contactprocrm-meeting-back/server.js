@@ -51,7 +51,7 @@ webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'
 var pwd = "Lokesh09876"
 var rooms = {}
 
-webrtcApp.get('/crmmeeting/joinurl', function(req, res){
+webrtcApp.post('/crmmeeting/joinurl', function(req, res){
    const { meeting_id, return_url, username, password } = req.body
    // const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
    // const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'

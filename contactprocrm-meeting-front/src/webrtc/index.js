@@ -140,8 +140,26 @@ class WebRTC {
                 // Read in the image file as a data URL.
                 reader.readAsDataURL(file);
                 fileInput[0].value = ''
+
+                console.log('file_input----------', reader, file)
+                var today = new Date().toLocaleDateString(undefined, {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+                const msgData = {
+                    message: `${file}'`,
+                    title: `${file.name}`,
+                    time: today
+                }
+
+                WebRTC.getInstance().onSendSocketMessage(peerId, peerName, WebRTC.getInstance().roomName, msgData);
             }
         )
+        
         fileInput[0].click();
         // .trigger('click');
     }
@@ -326,22 +344,6 @@ class WebRTC {
                             html: `"${client.idToName(peerId)}" sent a file.<br><a href='${URL.createObjectURL(blob)}' target='_blank'>Click here to download ${content.name}(${content.size}bytes)`,
                             align: 'left',
                             time: Date.now()}})
-                
-                var today = new Date().toLocaleDateString(undefined, {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                })
-                const msgData = {
-                    message: `"${content.binaryContents}'`,
-                    title: `"${content.name}`,
-                    time: today
-                }
-
-                WebRTC.getInstance().onSendSocketMessage(peerId, client.idToName(peerId), WebRTC.getInstance().roomName, msgData);
             } else if(msgType === 'close'){
                 console.log("Room closed on PeerMessage...")
                 window.easyrtc.disconnect();
