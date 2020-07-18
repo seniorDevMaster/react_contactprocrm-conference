@@ -18,16 +18,16 @@ var webrtcApp = express();
 const corsOpts = {
    origin: '*',
    methods: [
-     'GET',
-     'POST',
+      'GET',
+      'POST',
    ],
    allowedHeaders: [
-     'Content-Type',
+      'Content-Type',
    ],
 };
 
 webrtcApp.use(cors(corsOpts));
-webrtcApp.use(function(req, res, next) {
+webrtcApp.use(function (req, res, next) {
    res.setHeader('Access-Control-Allow-Origin', '*');
    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -48,98 +48,173 @@ webrtcApp.use('/static/css', express.static(__dirname + '/public/static/css'));
 webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
 webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
 
-var pwd = "Lokesh09876"
-var rooms = {}
+class Global {
+   static password = "Lokesh09876"
+   static rooms = {}
+   // Listening server port
+   static serverPort = 3000
+   static makeRoomNameFrom(username, meetingId) {
+      const meetingIDs = meetingId.split("-")
+      return username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
+   }
+   static makeOwnerUrl(roomName, userName) {
+      return 'https://chat.contactprocrm.com/login?room=' + roomName + '&username=' + userName
+   }
+   static makeJoinerUrl(roomName) {
+      return 'https://chat.contactprocrm.com/join?room=' + roomName
+   }
+}
+class RoomInfo {
+   constructor(accessDate, meeting_id, return_url, create_url, join_url, enter_room, owner = '', enterTime = '', chat = [], file = [], child = []) {
+      this.accessDate = accessDate;
+      this.meeting_id = meeting_id;
+      this.return_url = return_url;
+      this.create_url = create_url;
+      this.join_url = join_url;
+      this.enter_room = enter_room;
+      this.owner = owner;
+      this.enterTime = enterTime;
+      this.chat = chat;
+      this.file = file;
+      this.child = child;
+   }
+}
 
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database('crmcontact.db');
+class Debug {
+   static MODE = 'DEBUG' // 'PRODUCTION', 'FILE'
+   static log(main, detail = '') {
+      if (Debug.MODE === 'DEBUG') console.log(main + "\t", detail);
+   }
+   static err(main, detail = '') {
+      if (Debug.MODE === 'DEBUG') console.error(main + "\t", detail);
+   }
 
-db.serialize(function() {
-   db.run("CREATE TABLE if not exists meeting (dt TEXT, meeting_id TEXT, return_url TEXT)");
-});
+}
+class Sqlite {
+   static _sqlite = null
+   // Static function to create instance if not exists and return its instance.
+   static getInstance() {
+      if (!Sqlite._sqlite) {
+         Sqlite._sqlite = new Sqlite()
+      }
+      return Sqlite._sqlite;
+   }
 
-webrtcApp.post('/crmmeeting/joinurl', function(req, res){
+   // Load sqlite3 library and open database
+   constructor() {
+      this.sqlite3 = require('sqlite3').verbose();
+      Debug.log("SQLite: open database.");
+      this.db = new this.sqlite3.Database('crmcontact.db', function (err) {
+         Debug.err('  Failed in opening database.', err)
+      });
+   }
+
+   // Initialize Sqlite (migaration and load saved data)
+   init() {
+      Debug.log("SQLite: initialize.");
+      this.migration();
+      this.loadData();
+   }
+   // Migration Sqlite. Function to create data table if it is not exists.
+   migration() {
+      Debug.log("SQLite: execute migration.");
+      this.db.run("CREATE TABLE if not exists meeting (meeting_id TEXT PRIMARY KEY, access_date TEXT,  return_url TEXT, create_url TEXT, join_url TEXT, room_name TEXT, enter_room TEXT)",
+         function (err) {
+            if (err) Debug.err('  Failed in migration database.', err)
+         }
+      );
+   }
+
+   // Load initial value
+   loadData() {
+      Debug.log("SQLite: load initial data.");
+      this.db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting",
+         function (err, row) {
+            if (err) {
+               Debug.err(' Failed in load initial data.', err)
+            } else {
+               Global.rooms[row.room_name] = { access_date: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room, owner: '', enterTime: '', chat: [], file: [], child: [] }
+               Debug.log(' Initial room data.', Global.rooms[row.room_name])
+            }
+         }
+      );
+   }
+
+   // Create room
+   createRoom(meeting_id, return_url, create_url, join_url, room_name) {
+      Debug.log('SQLite: create room.', { meeting_id, return_url, create_url, join_url, room_name })
+      const stmt = this.db.prepare("INSERT INTO meeting VALUES (?,?,?,?,?,?,?)");
+      const cur_date = new Date().toLocaleTimeString();
+      stmt.run(meeting_id, cur_date, return_url, create_url, join_url, room_name, 'leave');
+      stmt.finalize();
+      Global.rooms[room_name] = new RoomInfo(cur_date, meeting_id, return_url, create_url, join_url, 'leave')
+   }
+
+   ownerStatus(roomName, status) {
+      Debug.log('SQLite: enter owner.', roomName)
+      db.run("UPDATE meeting SET enter_room=?, owner=? WHERE room_name=?",
+         [
+            status,
+            roomName,
+            roomName
+         ],
+         function (err) {
+            if (err) {
+               return Debug.err('SQLite:  Failed in entering owner', err.message);
+            }
+         }
+      );
+   }
+}
+Sqlite.getInstance().init()
+
+webrtcApp.post('/crmmeeting/joinurl', function (req, res) {
    const { meeting_id, return_url, username, password } = req.body
-   // const meeting_id = '107e1d63-34e3-cd9f-6da8-5d4272218021'
-   // const return_url = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history&username=admin'
-   // const username = "admin"
-   // const password = "Lokesh09876"
-
-   // Store datas from PHP backend
-   if (password === pwd) {
-      var meetingIDs = meeting_id.split("-")    
-      
-      var room_name = username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
-      var create_url = 'https://chat.contactprocrm.com/login?room=' + room_name + '&username=' + username
-      var join_url = 'https://chat.contactprocrm.com/join?room=' + room_name
-      var enter_room = false;
-      
-      db.get("SELECT COUNT(*) as cnt FROM meeting WHERE meeting_id=?", [meeting_id], (err, row) => {
-         if (err) {
-           return console.error(err.message);
-         }
-         if (row.cnt == 0) {
-            var stmt = db.prepare("INSERT INTO meeting VALUES (?,?,?,?,?,?,?)");
-            var date = new Date();
-            var cur_date = date.toLocaleTimeString();
-            stmt.run(cur_date, meeting_id, return_url, create_url, join_url, room_name, enter_room);
-            stmt.finalize();
-         } else {
-            console.log('duplicate meeting id: ', meeting_id)
-         }
-         return true
-      });
-      
-      // rooms[room_name] = {meeting_id: meeting_id, return_url: return_url, enter_room: false}
-      // console.log('rooms on joinUrl--------------:', rooms)
-
-      db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting", function(err, row) {
-         rooms[row.room_name] = {accessDate: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room}
-         console.log("All Info in PHP Post: " + rooms);
-      });
-
-      // res.send({create_url: create_url, join_url: join_url});
-      res.send(rooms);
+   if (password === Global.password) {
+      // make variables from request.
+      var room_name = Global.makeRoomNameFrom(username, meeting_id)
+      var create_url = Global.makeOwnerUrl(room_name, username)
+      var join_url = Global.makeJoinerUrl(room_name)
+      // Save room info to Sqlite database
+      Sqlite.getInstance().createRoom(meeting_id, return_url, create_url, join_url, room_name)
+      // response to client
+      res.send({ room_name: room_name, create_url: create_url, join_url: join_url });
    }
 })
 
-webrtcApp.post('/checkValidRoom', function(req, res) {
+webrtcApp.post('/checkValidRoom', function (req, res) {
    const { type, roomName } = req.body
-
-   db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting", function(err, row) {
-      rooms[row.room_name] = {access_date: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room, chat: [], file: [], child: []}
-   });
-
-   if( type == 0) { //0: owner, 1: user
-      if (rooms[roomName]) {
-         rooms[roomName].enter_room = true
-         res.send(true)
-      }
-      else
-         res.send(false)
-   } else {
-      if (rooms[roomName] && rooms[roomName].enter_room)
-         res.send({ status: 0}) // room & owner available
-      else if (rooms[roomName] && !rooms[roomName].enter_room)
-         res.send({ status: 1}) // room available & owner not available
-      else 
-         res.send({ status: 2}) // room not available & owner not available
+   const [TYPE_OWNER, TYPE_USER] = [0, 1]
+   switch (type) {
+      case TYPE_OWNER:
+         if (Global.rooms[roomName]) {
+            Global.rooms[roomName].enter_room = 'enter'
+            Global.rooms[roomName].owner = roomName;
+            Sqlite.getInstance().ownerStatus(roomName, 'enter');
+            res.send(true)
+         } else {
+            res.send(false)
+         }
+         break;
+      case TYPE_USER:
+         // room & owner available
+         if (Global.rooms[roomName] && Global.rooms[roomName].enter_room === 'enter') res.send({ status: 0 }) 
+         // room available & owner not available
+         if (Global.rooms[roomName] && Global.rooms[roomName].enter_room === 'leave') res.send({ status: 1 }) 
+         // room not available & owner not available
+         if (!Global.rooms[roomName]) res.send({ status: 2 }) 
+         break;
    }
 })
 
 // Catch all to handle all other requests that come into the app.
 webrtcApp.use('*', (req, res) => {
-  res.status(404).json({ msg: 'Not Found' })
+   res.status(404).json({ msg: 'Not Found' })
 })
 
-// By default the listening server port is 8080 unless set by nconf or Heroku
-var serverPort = 3000;
-// var serverPort = 3222;
-
-webServer = require('http').createServer(webrtcApp).listen(serverPort);
-console.log("Http server is running on Port: " + serverPort)
-var socketServer = io.listen(webServer, { 'log level': 0 });
-
+webServer = require('http').createServer(webrtcApp).listen(Global.serverPort);
+Debug.log("Http server is running on Port: " + Global.serverPort)
+const socketServer = io.listen(webServer, { 'log level': 0 });
 
 // Set up easyrtc specific options
 easyrtc.setOption('demosEnable', false);
@@ -147,91 +222,91 @@ easyrtc.setOption('demosEnable', false);
 // Use appIceServers from settings.json if provided. The format should be the same
 // as that used by easyrtc (http://easyrtc.com/docs/guides/easyrtc_server_configuration.php)
 easyrtc.setOption('appIceServers', [
-    {
-       'url': 'turn:turn.contactprocrm.com:3478',"username":"bruno","credential":"crmsite"
-    },
-    {
-       'url': 'turn:csturn.contactprocrm.com:3478',"username":"bruno","credential":"crmsite"
-    }
+   {
+      'url': 'turn:turn.contactprocrm.com:3478', "username": "bruno", "credential": "crmsite"
+   },
+   {
+      'url': 'turn:csturn.contactprocrm.com:3478', "username": "bruno", "credential": "crmsite"
+   }
 ]);
 easyrtc.listen(webrtcApp, socketServer);
 
 /// Chating
-const saveMsgContent = (peerId, peerName, roomName, content)=>{
-   const retMessage = {username:peerName, message: content.message, time: content.time}
-   const retFile = {username:peerName, content: content.message, time: content.time, name: content.title}
-   
-   if(rooms[roomName]){
-      content.title ? rooms[roomName].file.push(retFile) : rooms[roomName].chat.push(retMessage)
+const saveMsgContent = (peerName, roomName, content) => {
+   const retMessage = { username: peerName, message: content.message, time: content.time }
+   const retFile = { username: peerName, content: content.message, time: content.time, name: content.title }
+
+   if (Global.rooms[roomName]) {
+      content.title ? Global.rooms[roomName].file.push(retFile) : Global.rooms[roomName].chat.push(retMessage)
    }
 }
 
-easyrtc.events.on("easyrtcMsg", function(connectionObj, message, callback) {
-   switch(message.msgType){
+easyrtc.events.on("easyrtcMsg", function (connectionObj, message, callback) {
+   switch (message.msgType) {
       case 'save_message_content':
          saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.roomName, message.msgData.content);
-      
-      return true
+
+         return true
    }
    connectionObj.events.emitDefault("easyrtcMsg", connectionObj, message, callback);
 });
 
-easyrtc.events.on("roomLeave", function(connectionObj, roomName, callback){  // Owner leave the Room
+// Owner leave the Room via socket.io
+easyrtc.events.on("roomLeave", function (connectionObj, roomName, callback) {  
    connectionObj.events.emitDefault("roomLeave", connectionObj, roomName, callback);
-
    if (roomName != 'default') {
-      if (!rooms[roomName]){
-         console.error('ERROR!!!', roomName, rooms)
-      }else{
-         if (rooms[roomName].owner === connectionObj.socket.id) {
-            var duration = Math.floor((Date.now() - rooms[roomName].enterTime ) / 1000);
+      if (!Global.rooms[roomName]) {
+         Debug.err(' RoomLeave. ', roomName)
+      } else {
+         console.log(' RoomLeave Data', Global.rooms[roomName].owner, roomName)
 
-            if (!rooms[roomName]) {
-              console.error('ERROR!!! Join URL first.')
-              return;
+         if (Global.rooms[roomName].owner === roomName) {
+            var duration = Math.floor((Date.now() - Global.rooms[roomName].enterTime) / 1000);
+
+            const exithistory = { meeting_id: Global.rooms[roomName].meeting_id, duration: duration, chat: Global.rooms[roomName].chat, 
+                                    file: Global.rooms[roomName].file }
+            console.log(' Chatting History: ', roomName, exithistory)
+
+            for (const childConnectionObj of Global.rooms[roomName].child) {
+               childConnectionObj.disconnect(() => { });
             }
 
-            const exithistory = {meeting_id: rooms[roomName].meeting_id, duration: duration, chat: rooms[roomName].chat, file: rooms[roomName].file}
-            console.log('History -------------------------', rooms, roomName, exithistory)
-            
-            for(const childConnectionObj of rooms[roomName].child){
-               childConnectionObj.disconnect(()=>{});
-            }
-            
-            request.post(rooms[roomName].return_url, {
+            request.post(Global.rooms[roomName].return_url, {
                json: {
                   reqData: exithistory
                }
-            }, (error, res, body) => {
-               if (error) {
-                  console.error(error)
+            }, (err, res, body) => {
+               if (err) {
+                  Debug.err(' Failed in sending room history. ', err)
                   return
                }
-               rooms[roomName].enter_room = false
-               rooms[roomName].chat = []
-               rooms[roomName].file = []
-               rooms[roomName].child = []
+
+               Global.rooms[roomName].enter_room = 'leave'
+               Global.rooms[roomName].owner = ''
+               Global.rooms[roomName].chat = []
+               Global.rooms[roomName].file = []
+               Global.rooms[roomName].child = []
+               Sqlite.getInstance().ownerStatus(roomName, 'leave');
             })
          }
       }
    }
 });
 
-easyrtc.events.on("roomJoin", function(connectionObj, roomName, roomParam, callback){  // Owner create the Room
+// Owner Join the Room via socket.io
+easyrtc.events.on("roomJoin", function (connectionObj, roomName, roomParam, callback) {  // Owner create the Room
    if (roomName != 'default') {
-      if(!rooms[roomName])
+      if (!Global.rooms[roomName])
          return
 
-      if(rooms[roomName].enter_room && rooms[roomName].child.length === 0) {
-         rooms[roomName].enterTime = Date.now()
-         rooms[roomName].owner = connectionObj.socket.id
-         rooms[roomName].chat = []
-         rooms[roomName].file = []
-         rooms[roomName].child.push(connectionObj); // means owner
+      if (Global.rooms[roomName].child.length === 0) {
+         Global.rooms[roomName].enterTime = Date.now()
+         Global.rooms[roomName].owner = roomName
+         Global.rooms[roomName].chat = []
+         Global.rooms[roomName].file = []
+         Global.rooms[roomName].child.push(connectionObj); // means owner
       }
-      console.log('All data after joining to room: ', rooms)
+      Debug.log(' All data after joining to room', Global.rooms)
    }
    connectionObj.events.emitDefault("roomJoin", connectionObj, roomName, roomParam, callback);
 });
-
- 
