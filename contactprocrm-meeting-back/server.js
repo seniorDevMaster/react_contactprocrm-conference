@@ -65,9 +65,9 @@ class Global {
    }
 }
 class RoomInfo {
-   constructor(accessDate, meeting_id, return_url, create_url, join_url, enter_room, owner = '', enterTime = '', chat = [], file = [], child = []) {
-      this.accessDate = accessDate;
+   constructor(meeting_id, accessDate, return_url, create_url, join_url, enter_room, owner = '', enterTime = '', chat = [], file = [], child = []) {
       this.meeting_id = meeting_id;
+      this.accessDate = accessDate;
       this.return_url = return_url;
       this.create_url = create_url;
       this.join_url = join_url;
@@ -83,10 +83,10 @@ class RoomInfo {
 class Debug {
    static MODE = 'DEBUG' // 'PRODUCTION', 'FILE'
    static log(main, detail = '') {
-      if (Debug.MODE === 'DEBUG') console.log(main + "\t", detail);
+      // if (Debug.MODE === 'DEBUG') console.log(main + "\t", detail);
    }
    static err(main, detail = '') {
-      if (Debug.MODE === 'DEBUG') console.error(main + "\t", detail);
+      // if (Debug.MODE === 'DEBUG') console.error(main + "\t", detail);
    }
 
 }
@@ -128,12 +128,12 @@ class Sqlite {
    // Load initial value
    loadData() {
       Debug.log("SQLite: load initial data.");
-      this.db.each("SELECT access_date, meeting_id, return_url, create_url, join_url, room_name, enter_room FROM meeting",
+      this.db.each("SELECT meeting_id, access_date, return_url, create_url, join_url, room_name, enter_room FROM meeting",
          function (err, row) {
             if (err) {
                Debug.err(' Failed in load initial data.', err)
             } else {
-               Global.rooms[row.room_name] = { access_date: row.access_date, meeting_id: row.meeting_id, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room, owner: '', enterTime: '', chat: [], file: [], child: [] }
+               Global.rooms[row.room_name] = { meeting_id: row.meeting_id, access_date: row.access_date, return_url: row.return_url, create_url: row.create_url, join_url: row.join_url, enter_room: row.enter_room, owner: '', enterTime: '', chat: [], file: [], child: [] }
                Debug.log(' Initial room data.', Global.rooms[row.room_name])
             }
          }
@@ -147,12 +147,12 @@ class Sqlite {
       const cur_date = new Date().toLocaleTimeString();
       stmt.run(meeting_id, cur_date, return_url, create_url, join_url, room_name, 'leave');
       stmt.finalize();
-      Global.rooms[room_name] = new RoomInfo(cur_date, meeting_id, return_url, create_url, join_url, 'leave')
+      Global.rooms[room_name] = new RoomInfo(meeting_id, cur_date, return_url, create_url, join_url, 'leave')
    }
 
    ownerStatus(roomName, status) {
       Debug.log('SQLite: enter owner.', roomName)
-      db.run("UPDATE meeting SET enter_room=?, owner=? WHERE room_name=?",
+      this.db.run("UPDATE meeting SET enter_room=?, owner=? WHERE room_name=?",
          [
             status,
             roomName,
@@ -244,7 +244,8 @@ const saveMsgContent = (peerName, roomName, content) => {
 easyrtc.events.on("easyrtcMsg", function (connectionObj, message, callback) {
    switch (message.msgType) {
       case 'save_message_content':
-         saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.roomName, message.msgData.content);
+         saveMsgContent( message.msgData.clientName, message.msgData.roomName, message.msgData.content);
+         // saveMsgContent(message.msgData.clientId, message.msgData.clientName, message.msgData.roomName, message.msgData.content);
 
          return true
    }
@@ -258,14 +259,12 @@ easyrtc.events.on("roomLeave", function (connectionObj, roomName, callback) {
       if (!Global.rooms[roomName]) {
          Debug.err(' RoomLeave. ', roomName)
       } else {
-         console.log(' RoomLeave Data', Global.rooms[roomName].owner, roomName)
-
-         if (Global.rooms[roomName].owner === roomName) {
+         if (Global.rooms[roomName].owner === roomName && Global.rooms[roomName].child.length !== 0) {
             var duration = Math.floor((Date.now() - Global.rooms[roomName].enterTime) / 1000);
 
             const exithistory = { meeting_id: Global.rooms[roomName].meeting_id, duration: duration, chat: Global.rooms[roomName].chat, 
                                     file: Global.rooms[roomName].file }
-            console.log(' Chatting History: ', roomName, exithistory)
+            console.log(' Chatting History: ', roomName, Global.rooms[roomName], exithistory)
 
             for (const childConnectionObj of Global.rooms[roomName].child) {
                childConnectionObj.disconnect(() => { });
@@ -286,7 +285,7 @@ easyrtc.events.on("roomLeave", function (connectionObj, roomName, callback) {
                Global.rooms[roomName].chat = []
                Global.rooms[roomName].file = []
                Global.rooms[roomName].child = []
-               Sqlite.getInstance().ownerStatus(roomName, 'leave');
+               // Sqlite.getInstance().ownerStatus(roomName, 'leave');
             })
          }
       }
