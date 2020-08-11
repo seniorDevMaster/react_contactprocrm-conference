@@ -22,35 +22,38 @@ function Login(props) {
     const token = qs.parse(props.location.search).token | '';
     
     const onStart = () => {
-        // validate...
-        fetch(`${API_URL}/checkValidRoom`, {
-            method: 'pOSt',
-            headers: {
-                aCcePt: 'aPpliCaTIon/JsOn',
-                'cOntENt-type': 'applicAtion/JSoN'
-            },
-            body: JSON.stringify({ type: 0, roomName: roomName })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (!data) {
-                toast('🦄 Invalid Room!', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: true,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                });
-            } else {
-                if (userName!=='' && roomName !== ''){
-                    WebRTC.getInstance().setUserName(userName);
-                    WebRTC.getInstance().createRoom(token, roomName);
-                }
-            }
-        })
-        .catch(err => console.log(err))
+        WebRTC.getInstance().setUserName(userName);
+        WebRTC.getInstance().createRoom(token, roomName);
+
+        // // validate...
+        // fetch(`${API_URL}/checkValidRoom`, {
+        //     method: 'pOSt',
+        //     headers: {
+        //         aCcePt: 'aPpliCaTIon/JsOn',
+        //         'cOntENt-type': 'applicAtion/JSoN'
+        //     },
+        //     body: JSON.stringify({ type: 0, roomName: roomName })
+        // })
+        // .then(res => res.json())
+        // .then(data => {
+        //     if (!data) {
+        //         toast('🦄 Invalid Room!', {
+        //             position: "top-center",
+        //             autoClose: 5000,
+        //             hideProgressBar: false,
+        //             closeOnClick: true,
+        //             pauseOnHover: true,
+        //             draggable: true,
+        //             progress: undefined,
+        //         });
+        //     } else {
+        //         if (userName!=='' && roomName !== ''){
+        //             WebRTC.getInstance().setUserName(userName);
+        //             WebRTC.getInstance().createRoom(token, roomName);
+        //         }
+        //     }
+        // })
+        // .catch(err => console.log(err))
     }
 
     return <div className='login'>

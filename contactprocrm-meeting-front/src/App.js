@@ -21,7 +21,7 @@ function App() {
 					<Route path="/room" component={Home}></Route>
 					<Route path="/join" component={Join}></Route>
 					<Route path="/login" component={Login}></Route>
-					{/* <Route path="/" component={Login}></Route> */}
+					<Route path="/" component={Login}></Route>
 					<Route path="/404" component={NotFoundPage} ></Route>
 					<Redirect to="/404" ></Redirect>
                 </Switch>

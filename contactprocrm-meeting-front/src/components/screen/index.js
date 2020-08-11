@@ -10,7 +10,7 @@ const Screen = (props) => {
         setTimeout(()=>{
             const video = document.getElementById(props.user.stream.id);
             window.easyrtc.setVideoObjectSrc( video, props.user.stream);
-        }, 100);
+        }, 1000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     const [muted, setMuted] = useState(props.user.id==='me' ? true: false)

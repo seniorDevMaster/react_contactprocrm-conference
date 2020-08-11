@@ -17,46 +17,48 @@ function Join(props) {
 
 
     const onJoin = () => {
-        // validate...
-        fetch(`${API_URL}/checkValidRoom`, {
-            method: 'pOSt',
-            headers: {
-                aCcePt: 'aPpliCaTIon/JsOn',
-                'cOntENt-type': 'applicAtion/JSoN'
-            },
-            body: JSON.stringify({ type:1, roomName: room })
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log('onLogin --------', data)
-            if ( data.status === 2 ) {
-                toast('🦄 Invalid Room!', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: true,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                });
-            } else if ( data.status === 1 ) {
-                toast('🦄 Owner does not available!', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: true,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                });
-            } else {
-                if (userName!==''){
-                    WebRTC.getInstance().setUserName(userName);
-                    WebRTC.getInstance().joinRoom('', room);
-                }
-            }
-        })
-        .catch(err => console.log(err))
+        WebRTC.getInstance().setUserName(userName);
+        WebRTC.getInstance().joinRoom('', room);
+        // // validate...
+        // fetch(`${API_URL}/checkValidRoom`, {
+        //     method: 'pOSt',
+        //     headers: {
+        //         aCcePt: 'aPpliCaTIon/JsOn',
+        //         'cOntENt-type': 'applicAtion/JSoN'
+        //     },
+        //     body: JSON.stringify({ type:1, roomName: room })
+        // })
+        // .then(res => res.json())
+        // .then(data => {
+        //     console.log('onLogin --------', data)
+        //     if ( data.status === 2 ) {
+        //         toast('🦄 Invalid Room!', {
+        //             position: "top-center",
+        //             autoClose: 5000,
+        //             hideProgressBar: false,
+        //             closeOnClick: true,
+        //             pauseOnHover: true,
+        //             draggable: true,
+        //             progress: undefined,
+        //         });
+        //     } else if ( data.status === 1 ) {
+        //         toast('🦄 Owner does not available!', {
+        //             position: "top-center",
+        //             autoClose: 5000,
+        //             hideProgressBar: false,
+        //             closeOnClick: true,
+        //             pauseOnHover: true,
+        //             draggable: true,
+        //             progress: undefined,
+        //         });
+        //     } else {
+        //         if (userName!==''){
+        //             WebRTC.getInstance().setUserName(userName);
+        //             WebRTC.getInstance().joinRoom('', room);
+        //         }
+        //     }
+        // })
+        // .catch(err => console.log(err))
     }
 
     return <div className='login'>
