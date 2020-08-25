@@ -11,6 +11,7 @@ var io = require('socket.io');
 var bodyParser = require('body-parser')
 const request = require('request')
 const cors = require('cors')
+const path = require('path');
 
 var webServer = null;
 var webrtcApp = express();
@@ -38,15 +39,20 @@ webrtcApp.use(function (req, res, next) {
 webrtcApp.use(bodyParser.urlencoded({ extended: false }))
 webrtcApp.use(bodyParser.json())
 // Set up routes for static resources
-webrtcApp.use('/', express.static(__dirname + '/public'));
-webrtcApp.use('/room', express.static(__dirname + '/public'));
-webrtcApp.use('/login', express.static(__dirname + '/public'));
-webrtcApp.use('/join', express.static(__dirname + '/public'));
-webrtcApp.use('/js', express.static(__dirname + '/public/js'));
-webrtcApp.use('/static', express.static(__dirname + '/public/static'));
-webrtcApp.use('/static/css', express.static(__dirname + '/public/static/css'));
-webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
-webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
+// webrtcApp.use('/', express.static(__dirname + '/public'));
+// webrtcApp.use('/room', express.static(__dirname + '/public'));
+// webrtcApp.use('/login', express.static(__dirname + '/public'));
+// webrtcApp.use('/join', express.static(__dirname + '/public'));
+// webrtcApp.use('/js', express.static(__dirname + '/public/js'));
+// webrtcApp.use('/static', express.static(__dirname + '/public/static'));
+// webrtcApp.use('/static/css', express.static(__dirname + '/public/static/css'));
+// webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
+// webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
+
+webrtcApp.use(express.static(path.join(__dirname, 'public')));
+webrtcApp.get('/*', function(req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 class Global {
    static password = "Lokesh09876"
@@ -58,10 +64,10 @@ class Global {
       return username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
    }
    static makeOwnerUrl(roomName, userName) {
-      return 'https://chat.contactprocrm.com/login?room=' + roomName + '&username=' + userName
+      return 'https://chat.contactprocrm.com/#/login?room=' + roomName + '&username=' + userName
    }
    static makeJoinerUrl(roomName) {
-      return 'https://chat.contactprocrm.com/join?room=' + roomName
+      return 'https://chat.contactprocrm.com/#/join?room=' + roomName
    }
 }
 class RoomInfo {
@@ -227,6 +233,9 @@ easyrtc.setOption('appIceServers', [
    },
    {
       'url': 'turn:csturn.contactprocrm.com:3478', "username": "bruno", "credential": "crmsite"
+   },
+   {
+      'url': 'turn:india.contactprocrm.com:3478', "username": "bruno", "credential": "brunoedward"
    }
 ]);
 easyrtc.listen(webrtcApp, socketServer);
@@ -259,12 +268,13 @@ easyrtc.events.on("roomLeave", function (connectionObj, roomName, callback) {
       if (!Global.rooms[roomName]) {
          Debug.err(' RoomLeave. ', roomName)
       } else {
-         if (Global.rooms[roomName].owner === roomName && Global.rooms[roomName].child.length !== 0) {
+         // if (Global.rooms[roomName].owner === roomName) {
+         if (Global.rooms[roomName].owner === roomName && Global.rooms[roomName].child[0].socket.id === connectionObj.socket.id) {
             var duration = Math.floor((Date.now() - Global.rooms[roomName].enterTime) / 1000);
 
             const exithistory = { meeting_id: Global.rooms[roomName].meeting_id, duration: duration, chat: Global.rooms[roomName].chat, 
                                     file: Global.rooms[roomName].file }
-            console.log(' Chatting History: ', roomName, Global.rooms[roomName], exithistory)
+            // console.log(' Chatting History: ', roomName, Global.rooms[roomName], exithistory)
 
             for (const childConnectionObj of Global.rooms[roomName].child) {
                childConnectionObj.disconnect(() => { });
@@ -305,7 +315,7 @@ easyrtc.events.on("roomJoin", function (connectionObj, roomName, roomParam, call
          Global.rooms[roomName].file = []
          Global.rooms[roomName].child.push(connectionObj); // means owner
       }
-      Debug.log(' All data after joining to room', Global.rooms)
+      // console.log(' All data after joining to room', Global.rooms[roomName].child, Global.rooms[roomName].child[0].socket.id)
    }
    connectionObj.events.emitDefault("roomJoin", connectionObj, roomName, roomParam, callback);
 });

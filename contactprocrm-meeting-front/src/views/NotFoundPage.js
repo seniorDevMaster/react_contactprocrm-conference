@@ -1,4 +1,5 @@
 import React from 'react';
+import { withRouter } from "react-router";
 
 function NotFoundPage(props) {
     return (
@@ -292,4 +293,4 @@ function NotFoundPage(props) {
         </div>
     )
 }
-export default NotFoundPage;
+export default withRouter(NotFoundPage);

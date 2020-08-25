@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux';
 import * as qs from 'query-string'
+import { withRouter } from "react-router";
 
 import './index.css';
 import NavBar from '../components/navbar';
@@ -54,4 +55,5 @@ function Home(props) {
         </div>
     );
 }
-export default Home;
+
+export default withRouter(Home)

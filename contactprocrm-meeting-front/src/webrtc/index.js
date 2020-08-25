@@ -3,6 +3,8 @@ class WebRTC {
     client = null;
     roomName = ''
     userName = ''
+    enableCamera = true
+    enableAudio = true
     owner    = false
     videoQualities = [
         {text:'SD (360p - 1Mb/s)', value:{width: 480, height:360, frameRate: 10}},
@@ -41,7 +43,6 @@ class WebRTC {
         return this.roomName;
     }
     generateRoomName(){
-        console.log('generateRoomName: ------------- ' ,window, window.generateRoomName())
         return window.generateRoomName();
     }
     createRoom(token, roomName) {
@@ -49,7 +50,7 @@ class WebRTC {
         window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
         this.owner = true
-        window.location.href = '/room?username='+this.getUserName()+'&owner';
+        window.location.href = '/#/room?username='+this.getUserName()+'&owner';
 
     }
     joinRoom(token, roomName) {
@@ -58,7 +59,7 @@ class WebRTC {
 
         window.localStorage.setItem('t', 'contactprocrm-meeting')
         window.localStorage.setItem('r', roomName)
-        window.location.href = '/room?username='+this.getUserName();
+        window.location.href = '/#/room?username='+this.getUserName();
     }
     createAudioMeter(localstream) {
         var kSampleSize = 16384;
@@ -96,11 +97,13 @@ class WebRTC {
     }
     toggleCamera (enable) {
         window.easyrtc.enableCamera(enable);
+        this.enableCamera = enable
         if(this.client)
             this.client.sendPeerMessage({room: this.roomName}, 'media-presence', {type:'camera', status: enable?'on':'off'});
     }
     toggleMic (enable) {
         window.easyrtc.enableMicrophone(enable);
+        this.enableAudio = enable
         if(this.client)
             this.client.sendPeerMessage({room: this.roomName}, 'media-presence', {type:'mic', status: enable?'on':'off'});
     }
@@ -136,49 +139,37 @@ class WebRTC {
                             align: 'right',
                             time: Date.now()}})
                     window.easyrtc.sendDataP2P(peerId, 'file', txData);
+
+                    var today = new Date().toLocaleDateString(undefined, {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    })
+                    const msgData = {
+                        message: e.target.result,
+                        title: `${file.name}`,
+                        time: today
+                    }
+                    WebRTC.getInstance().onSendSocketMessage(peerId, peerName, WebRTC.getInstance().roomName, msgData);
                 };
                 // Read in the image file as a data URL.
                 reader.readAsDataURL(file);
                 fileInput[0].value = ''
-
-                console.log('file_input----------', reader, file)
-                var today = new Date().toLocaleDateString(undefined, {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                })
-                const msgData = {
-                    message: `${file}'`,
-                    title: `${file.name}`,
-                    time: today
-                }
-
-                WebRTC.getInstance().onSendSocketMessage(peerId, peerName, WebRTC.getInstance().roomName, msgData);
             }
         )
         
         fileInput[0].click();
-        // .trigger('click');
     }
     exitRoom(owner){
-        // if(this.owner === 'true'){
-        //     this.sendMessage('Room closed.');
-        //     window.easyrtc.sendPeerMessage({
-        //         targetRoom: WebRTC.getInstance().roomName
-        //     }, 'close');
-        //     this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
-        // }
         window.easyrtc.disconnect();
         this.dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
 
         if (owner) {
-            window.location.href = '/login?room='+WebRTC.getInstance().roomName+'&username='+this.getUserName()+'&owner';
+            window.location.href = '/#/login?room='+WebRTC.getInstance().roomName+'&username='+this.getUserName()+'&owner';
         }
-        // http://localhost:3000/login?room=admin-34e3cd9f6da8&username=admin
-        // window.location.href = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history';
     }
     updateStreamMode(){
         // get getUserMedia mode
@@ -201,7 +192,7 @@ class WebRTC {
     onStreamConfigurationChange(){
         this.updateStreamMode();
         const local = window.easyrtc.getLocalStream();
-        local.getTracks().forEach(track=>{track.stop()})
+        // local.getTracks().forEach(track=>{track.stop()})     
         navigator.mediaDevices.getUserMedia(this.currentContraintMode).then(
             (stream)=>{
                 // replace local stream
@@ -212,6 +203,8 @@ class WebRTC {
                 // send it to remote
                 const peers = window.easyrtc.getPeerConnections()
                 for(const id in peers){
+                    console.log('peers : ====== ', peers);
+
                     const peer = peers[id]
                     if(peer.cancelled)
                         continue;
@@ -259,7 +252,7 @@ class WebRTC {
         this.roomName = room ? room : window.localStorage.getItem('r');
         console.log('roomName: ',this.roomName)
         if(!this.roomName){
-            window.location.href = '/';
+            window.location.href = '/#/404';
             return;
         }
         this.dispatch = dispatch;
@@ -279,8 +272,8 @@ class WebRTC {
         window.easyrtc.enableDataChannels(true);
         window.VTCCore
         .initialize({
-            cameraIsEnabled: true,
-            micIsEnabled: true
+            cameraIsEnabled: WebRTC.getInstance().enableCamera,
+            micIsEnabled: WebRTC.getInstance().enableAudio
         })
         .onError(function(config) {
             console.log("error---", config);
@@ -348,20 +341,6 @@ class WebRTC {
                 console.log("Room closed on PeerMessage...")
                 window.easyrtc.disconnect();
                 WebRTC.getInstance().dispatch({type:'chat_add', value:{username: 'Me', userid: 'me', text: 'Room closed.', align: 'right', time: Date.now()}})
-
-                // console.log(content)
-                // window.location.href = 'https://crm.contactprocrm.com/index.php?entryPoint=WebRTC&action=history';
-
-                // WebRTC.getInstance().exitRoom()
-                // window.easyrtc.disconnect();
-            // } else if(msgType === 'closeOwner'){
-            //     console.log("Room closed on Owner...")
-
-            //     WebRTC.getInstance().exitRoom()
-            // } else if(msgType === 'closeUser'){
-            //     console.log("Room closed on User...")
-            //     window.easyrtc.disconnect();
-            //     // window.location.href = '/';
             } else {
                 // @todo FIXME: right now we don't have other messages to take care of
                 console.log('peerMessage => got a peer message that is unexpected');
@@ -376,8 +355,7 @@ class WebRTC {
             console.log("stream accpet", peerId, peerName, stream);
 
             dispatch({type: 'user_add', value: {id: peerId, name: peerName, stream} })
-            WebRTC.getInstance().onStreamConfigurationChange();
-
+            // WebRTC.getInstance().onStreamConfigurationChange();
             return;
         })
         .onStreamClose(function(client, peerId) {
@@ -420,7 +398,7 @@ class WebRTC {
     onSetScreenCapture(){
         this.updateStreamMode();
         const local = window.easyrtc.getLocalStream();
-        local.getTracks().forEach(track=>{track.stop()})
+        // local.getTracks().forEach(track=>{track.stop()})
         // navigator.mediaDevices.getUserMedia(this.currentContraintMode).then(
         navigator.mediaDevices.getDisplayMedia({video:{width: 1920, height:1080, frameRate: 5}}).then(
             async (stream)=>{

@@ -121,6 +121,19 @@ var Login = {
      *                       check.
      * @private
      */
+    _iOS: function() {
+        return [
+          'iPad Simulator',
+          'iPhone Simulator',
+          'iPod Simulator',
+          'iPad',
+          'iPhone',
+          'iPod'
+        ].includes(navigator.platform)
+        // iPad on iOS 13 detection
+        || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+    },
+
     _checkIfNonTlsAndChromeAbove47: function() {
         var userAgent = navigator.userAgent;
         if (window.location.protocol !== 'https:' &&
@@ -174,8 +187,29 @@ var Login = {
      */
     _browserCompatCheck: function() {
         var userAgent = navigator.userAgent;
+        // console.log('userAgesnt : ', navigator, navigator.userAgent, Login._iOS())
 
-        if (!('Notification' in window)) {
+        // var node = document.createElement("div");                 // Create a <li> node
+        // node.style.color = '#000'
+        // node.style.zIndex = '100000'
+        // node.style.position = 'absolute'
+        // node.style.top = '20%'
+        // node.style.left = '30%'
+        // node.style.width = '500px'
+        // node.style.height = '500px'
+        // node.style.overflow = 'scroll'
+
+        // for (var index in window.localStorage ) {
+        //     node.innerHTML += window[index];
+        // }
+        // node.innerHTML += '--------------------------'
+        // for (var index in navigator ) {
+        //     node.innerHTML += navigator[index];
+        // }
+        // node.innerHTML += '---------------------------' +  navigator.userAgent + '=====================' + Login._iOS()
+        // document.getElementById("root").appendChild(node);  
+
+        if (!('Notification' in window) && !Login._iOS()) {
             ErrorMetric.log('_browserCompatCheck => browser does not support Notifications');
             ErrorMetric.log('                    => userAgent: ' + userAgent);
 
@@ -185,6 +219,7 @@ var Login = {
         if (!('localStorage' in window)) {
             ErrorMetric.log('_browserCompatCheck => browser does not support LocalStorage');
             ErrorMetric.log('                    => userAgent: ' + userAgent);
+            alert('Nofitication localStorage')
 
             return null;
         }
@@ -192,6 +227,7 @@ var Login = {
         if (!VTCCore.isBrowserSupported()) {
             ErrorMetric.log('_browserCompatCheck => browser does not support WebRTC');
             ErrorMetric.log('                    => userAgent: ' + userAgent);
+            alert('Nofitication isBrowserSupported')
 
             return null;
         }

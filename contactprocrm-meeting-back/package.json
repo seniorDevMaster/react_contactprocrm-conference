@@ -4,6 +4,7 @@
     "description": "Tuber-time Communications",
     "author": "yying",
     "license": "MIT",
+    "homepage": "https://chat.contactprocrm.com/",
     "repository": {
         "type": "git",
         "url": "https://github.com/trailofbits/tubertc.git"
@@ -16,11 +17,14 @@
     ],
     "dependencies": {
         "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
         "express": "*",
         "handlebars": "*",
+        "mongoose": "^5.9.25",
         "nconf": "*",
         "node-sqlite": "0.0.2-security",
         "open-easyrtc": "*",
+        "path": "^0.12.7",
         "request": "^2.88.2",
         "socket.io": "*",
         "sqlite3": "^5.0.0"

@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import * as qs from 'query-string'
 import WebRTC from '../webrtc';
 import Slideshow from "../components/slideshow";
+import axios from "axios"
+import { withRouter } from "react-router";
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,9 +19,59 @@ function Join(props) {
 
 
     const onJoin = () => {
-        WebRTC.getInstance().setUserName(userName);
-        WebRTC.getInstance().joinRoom('', room);
-        // // validate...
+        // validate...
+        const headers = {
+            "Content-Type": "application/json;charset=UTF-8",
+        }
+        axios
+            .post(
+                `${API_URL}/checkValidRoom`,
+                {
+                    type: 1,
+                    roomName: room,
+                },
+                {
+                    headers: headers,
+                }
+            )
+            .then(
+                (response) => {
+                    console.log(response)
+                    if ( response.status === 2 ) {
+                        toast('🦄 Invalid Room!', {
+                            position: "top-center",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                        });
+                    } else if ( response.status === 1 ) {
+                        toast('🦄 Owner does not available!', {
+                            position: "top-center",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                        });
+                    } else {
+                        if (userName!==''){
+                            WebRTC.getInstance().setUserName(userName);
+                            WebRTC.getInstance().joinRoom('', room);
+                        }
+                    }
+                },
+                (error) => {
+                    console.log(error)
+                }
+            )
+            .catch((error) => {
+                console.log("Error fetching and parsing data", error)
+            })
+
         // fetch(`${API_URL}/checkValidRoom`, {
         //     method: 'pOSt',
         //     headers: {
@@ -111,4 +163,5 @@ function Join(props) {
             />
         </div>;
 }
-export default Join;
+
+export default withRouter(Join)

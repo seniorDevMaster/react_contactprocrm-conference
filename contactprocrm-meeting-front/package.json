@@ -1,11 +1,13 @@
 {
   "name": "contactprocrm-meeting-front",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "homepage": "https://chat.contactprocrm.com/",
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "axios": "^0.20.0",
     "emoji-js": "^3.5.0",
     "emoji-picker-react": "^3.1.6",
     "node-sass": "^4.14.1",
@@ -16,7 +18,7 @@
     "react-notifications-component": "^2.4.0",
     "react-redux": "^7.2.0",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "3.4.1",
+    "react-scripts": "^3.4.3",
     "react-slideshow-image": "^1.4.2",
     "react-toast-notifications": "^2.4.0",
     "react-toastify": "^6.0.8",

@@ -4,16 +4,18 @@ import User from '../users/user'
 import Button from '../button';
 import speaker_on from '../../images/speaker-on.svg'
 import speaker_off from '../../images/speaker-off.svg'
+import WebRTC from '../../webrtc';
 
 const Screen = (props) => {
     useEffect(()=>{
         setTimeout(()=>{
             const video = document.getElementById(props.user.stream.id);
             window.easyrtc.setVideoObjectSrc( video, props.user.stream);
-        }, 1000);
+        }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     const [muted, setMuted] = useState(props.user.id==='me' ? true: false)
+    
     const toggleMute = ()=>{
         setMuted(!muted)
         const video = document.getElementById(props.user.stream.id);

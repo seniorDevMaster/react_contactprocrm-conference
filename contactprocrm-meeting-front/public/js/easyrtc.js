@@ -6642,7 +6642,7 @@ var Easyrtc = function() {
     /** @private */
     var dataEnabled = false;
     /** @private */
-    // var serverPath = 'http://localhost:3222/'; // this was null, but that was generating an error.
+    // var serverPath = 'http://localhost:3333/'; // this was null, but that was generating an error.
     var serverPath = 'https://chat.contactprocrm.com/'; // this was null, but that was generating an error.
     
     /** @private */
