@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 
 import './index.css';
 import Screen from '../screen';
+import WebRTC from '../../webrtc';
 
 function matchSize(width, height) {
     let a = width / 16;
@@ -44,8 +45,10 @@ function ScreenContainer() {
     useEffect(()=>{
         getClientSize(setSize);
     }, [])
+
+    const browserDetect = WebRTC.getInstance().browserDetect()
     return (
-        <div className='videoFrame' id='videoFrame'>
+        <div className='videoFrame' id='videoFrame' style={{height: browserDetect==='Firefox'?'90vh':'100%'}}>
         {
             users.map((user) => {
                 return (<div key={user.id} style={{margin: 1}}>

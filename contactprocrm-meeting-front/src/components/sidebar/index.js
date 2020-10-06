@@ -30,9 +30,10 @@ const Sidebar = (props) => {
     useEffect(()=>{
         setInterval(()=>{ startTime++; setTime(startTime); }, 1000)
     },[]);
+    const browserDetect = WebRTC.getInstance().browserDetect()
     
     return (
-        <div className='sidebar' style={{display: chat==='on'? 'block': 'none'}}>
+        <div className='sidebar' style={{display: chat==='on'? 'block': 'none', height: browserDetect==='Firefox'?'100vh':'100%'}}>
             <div className='mark'>
                 <Button on={sidebar_hide} off={sidebar_show} status={chat} onClick={toggleShow}></Button>
             </div>

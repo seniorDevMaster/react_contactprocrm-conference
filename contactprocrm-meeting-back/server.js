@@ -38,17 +38,6 @@ webrtcApp.use(function (req, res, next) {
 
 webrtcApp.use(bodyParser.urlencoded({ extended: false }))
 webrtcApp.use(bodyParser.json())
-// Set up routes for static resources
-// webrtcApp.use('/', express.static(__dirname + '/public'));
-// webrtcApp.use('/room', express.static(__dirname + '/public'));
-// webrtcApp.use('/login', express.static(__dirname + '/public'));
-// webrtcApp.use('/join', express.static(__dirname + '/public'));
-// webrtcApp.use('/js', express.static(__dirname + '/public/js'));
-// webrtcApp.use('/static', express.static(__dirname + '/public/static'));
-// webrtcApp.use('/static/css', express.static(__dirname + '/public/static/css'));
-// webrtcApp.use('/static/js', express.static(__dirname + '/public/static/js'));
-// webrtcApp.use('/static/media', express.static(__dirname + '/public/static/media'));
-
 webrtcApp.use(express.static(path.join(__dirname, 'public')));
 webrtcApp.get('/*', function(req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -58,7 +47,9 @@ class Global {
    static password = "Lokesh09876"
    static rooms = {}
    // Listening server port
-   static serverPort = 3000
+   // static serverPort = 3000
+   static serverPort = 3333
+   
    static makeRoomNameFrom(username, meetingId) {
       const meetingIDs = meetingId.split("-")
       return username + '-' + meetingIDs[1] + meetingIDs[2] + meetingIDs[3]
